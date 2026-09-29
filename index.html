@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>利益早見表</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --text: #1c2530;
+  --muted: #5c6b7a;
+  --border: #d5dce3;
+  --accent: #1f6feb;
+  --accent-text: #ffffff;
+  --band: #f0f4f8;
+  --group-line: #8fa3b5;
+  --err: #b42318;
+  --alert: #b42318;
+  --ok: #17703a;
+  --profit-rgb: 30, 150, 90;
+  --loss: #b42318;
+  --shadow: 0 1px 3px rgba(20, 30, 40, .08);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12171d;
+    --surface: #1b222b;
+    --text: #e6ebf0;
+    --muted: #9aa8b6;
+    --border: #33404d;
+    --accent: #5b9dff;
+    --accent-text: #0b1420;
+    --band: #212a34;
+    --group-line: #6b7f92;
+    --err: #ff8a80;
+    --alert: #ff8a80;
+    --ok: #6fd69a;
+    --profit-rgb: 60, 190, 120;
+    --loss: #ff8a80;
+    --shadow: none;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Yu Gothic", Meiryo, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+}
+.wrap { max-width: 900px; margin: 0 auto; padding: 20px 16px 48px; }
+h1 { font-size: 20px; margin: 0 0 16px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; box-shadow: var(--shadow); }
+.inputs { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; }
+.inputs > div { min-width: 0; }
+.inputs label { display: block; font-weight: 600; font-size: 14px; color: var(--muted); margin-bottom: 4px; }
+.inputs input {
+  width: 100%; min-width: 0; font-size: 26px; padding: 10px 12px; border: 2px solid var(--border);
+  border-radius: 10px; background: var(--bg); color: var(--text); font-variant-numeric: tabular-nums;
+}
+input:focus, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+input.bad { border-color: var(--err); }
+.toolbar { display: flex; justify-content: space-between; align-items: center; margin: 16px 0 8px; gap: 8px; flex-wrap: wrap; }
+.summary { font-size: 14px; color: var(--muted); margin: 0; min-width: 0; overflow-wrap: anywhere; }
+button {
+  font: inherit; font-size: 15px; padding: 8px 16px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+}
+button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+.guidelink {
+  display: inline-block; font-size: 15px; padding: 8px 16px; border-radius: 8px; text-decoration: none;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+}
+.guidelink:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+.msg { padding: 28px 16px; text-align: center; color: var(--err); font-weight: 600; }
+.tablebox { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th { font-size: 13px; color: var(--muted); text-align: right; padding: 10px 12px; border-bottom: 2px solid var(--group-line); background: var(--surface); line-height: 1.3; font-weight: 600; }
+th small { font-size: 11px; font-weight: 400; }
+td { text-align: right; padding: 10px 12px; font-size: 16px; white-space: nowrap; }
+th:first-child, th:nth-child(2), td:first-child, td:nth-child(2) { text-align: center; }
+tr.g1 td { background: var(--band); }
+tr.first td { border-top: 2px solid var(--group-line); }
+tbody tr.first:first-child td { border-top: none; }
+td.profit { font-weight: 700; }
+td.profit.neg { color: var(--loss); }
+.alt { display: block; font-size: 12px; color: var(--alert); font-weight: 700; white-space: normal; border-radius: 4px; outline: 2px solid transparent; outline-offset: 1px; }
+@keyframes altpulse { 0%, 100% { outline-color: transparent; } 50% { outline-color: var(--alert); } }
+@media (prefers-reduced-motion: no-preference) {
+  .alt { animation: altpulse .8s ease-in-out 3; }
+}
+.legend { color: var(--alert); font-weight: 600; }
+td.na { text-align: center; color: var(--err); font-size: 14px; }
+.note { font-size: 13px; color: var(--muted); margin: 10px 2px 0; }
+#settings, #shipcalc {
+  display: none; position: fixed; top: 0; right: 0; bottom: 0; width: 400px; max-width: 100%;
+  margin: 0; border-radius: 0; border-width: 0 0 0 1px; overflow-y: auto; z-index: 10;
+  box-shadow: -8px 0 24px rgba(0,0,0,.18); padding-bottom: 40px;
+}
+#settings.open, #shipcalc.open { display: block; }
+.settings-head {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  position: sticky; top: -16px; margin: -16px -16px 12px; padding: 12px 16px;
+  background: var(--surface); border-bottom: 1px solid var(--border); z-index: 1;
+}
+.settings-head h2 { font-size: 17px; margin: 0; }
+@media (min-width: 900px) { body.settings-open { padding-right: 400px; } }
+.grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+.field label.t { font-weight: 600; display: block; }
+.field .d, .sec > .d { font-size: 13px; color: var(--muted); margin: 0 0 4px; }
+.field input[type=text] {
+  width: 100%; min-width: 0; font-size: 16px; padding: 8px 10px; border: 2px solid var(--border);
+  border-radius: 8px; background: var(--bg); color: var(--text);
+}
+.field .row { display: flex; align-items: center; gap: 8px; }
+.pick { display: flex; gap: 8px; align-items: stretch; }
+.pick select {
+  flex: 0 0 46%; min-width: 0; font: inherit; font-size: 16px; padding: 8px 10px; border: 2px solid var(--border);
+  border-radius: 8px; background: var(--bg); color: var(--text); cursor: pointer;
+}
+.pick input[type=text] { flex: 1 1 0; }
+select:focus { outline: 3px solid var(--accent); outline-offset: 1px; }
+.seg { display: flex; gap: 0; }
+.seg button { flex: 1 1 0; min-width: 0; border-radius: 0; padding: 8px 6px; font-size: 14px; }
+.seg button:first-child { border-radius: 8px 0 0 8px; }
+.seg button:last-child { border-radius: 0 8px 8px 0; border-left-width: 0; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+.sec { margin-top: 22px; }
+.sec:first-of-type { margin-top: 0; }
+.sec h3 { font-size: 15px; margin: 0 0 10px; padding-top: 10px; border-top: 2px solid var(--group-line); }
+.sec:first-of-type h3 { border-top: none; padding-top: 0; }
+.init { font-size: 12px; color: var(--muted); margin-top: 4px; overflow-wrap: anywhere; }
+.boxrow { display: grid; grid-template-columns: 3.4em minmax(0, 1fr); gap: 8px; align-items: start; margin-bottom: 8px; }
+.boxrow > label { padding-top: 9px; font-size: 14px; color: var(--muted); }
+.boxrow .inline { min-height: 0; }
+.field.off > label.t, .field.off > .d, .field.off .row { opacity: .5; }
+input:disabled { opacity: .5; cursor: not-allowed; background: var(--band); }
+.field input[type=text].bad, .pick select.bad { border-color: var(--err); }
+.hidden { display: none !important; }
+.tabs { display: flex; gap: 8px; margin: 0 0 14px; }
+.tabs button { flex: 1 1 0; min-width: 0; font-size: 17px; font-weight: 600; padding: 12px 8px; border-radius: 10px; }
+.tabs button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+.controls { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: flex-start; margin-top: 12px; }
+.ctl { min-width: 0; }
+.ctl > .caplabel { display: block; margin-bottom: 4px; }
+.ctl .seg button { padding: 6px 12px; font-size: 14px; }
+.capblock { flex: 1 1 260px; }
+.caphead { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.caphead .smallbtn { padding: 2px 10px; }
+.badge { display: inline-block; font-size: 12px; font-weight: 600; color: var(--accent-text); background: var(--accent); border-radius: 10px; padding: 0 8px; margin-left: 6px; vertical-align: middle; }
+.revtable { min-width: 620px; }
+td.hero { font-weight: 700; }
+.toolbtns { display: flex; gap: 8px; flex-wrap: wrap; }
+.caplabel { font-weight: 600; font-size: 14px; color: var(--muted); }
+.capbtns { display: flex; flex-wrap: wrap; gap: 6px; }
+.capbtns button { padding: 6px 10px; font-size: 14px; }
+.capbtns button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+.capbtns button:disabled { opacity: .5; cursor: not-allowed; }
+.capnote { font-size: 13px; color: var(--muted); }
+.smallbtn { font-size: 13px; padding: 4px 10px; }
+.volrow { font-size: 14px; margin: 4px 0; }
+.shlist { list-style: none; margin: 8px 0 0; padding: 0; }
+.shrow { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 10px 0; border-top: 1px solid var(--border); }
+.shinfo { flex: 1 1 130px; min-width: 0; }
+.shinfo b { display: block; }
+.shsub { font-size: 12px; color: var(--muted); }
+.shyen { font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; }
+.shyen.na { font-weight: 400; font-size: 13px; color: var(--muted); white-space: normal; }
+.shhint { display: block; font-size: 12px; }
+.settings-head h2:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.shcap { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.sh { display: none; }
+select.full { width: 100%; min-width: 0; font: inherit; font-size: 16px; padding: 8px 10px; border: 2px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); }
+select:disabled { opacity: .5; cursor: not-allowed; }
+.ex { background: var(--band); border-radius: 8px; padding: 6px 10px; }
+.field input[type=checkbox] { width: 22px; height: 22px; }
+.inline { font-size: 13px; margin-top: 4px; min-height: 1.2em; }
+.inline.ok { color: var(--ok); }
+.inline.err { color: var(--err); }
+.actions { margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+@media (max-width: 519px) {
+  .wrap { padding-left: 16px; padding-right: 16px; }
+  .inputs input { font-size: 22px; padding: 8px 10px; }
+  th { font-size: 11px; padding: 8px 2px; }
+  .lg { display: none; }
+  .sh { display: inline; }
+  th small { font-size: 10px; }
+  td { font-size: 12px; padding: 8px 2px; }
+  .alt { font-size: 10px; line-height: 1.2; }
+  td.na { font-size: 12px; white-space: normal; }
+}
+@media (max-width: 399px) {
+  .inputs { grid-template-columns: minmax(0,1fr); }
+}
+/* 拡張機能（サイドパネル）で開いたときだけ使う */
+body.in-extension .wrap { padding-left: 10px; padding-right: 10px; }
+body.in-extension #settings, body.in-extension #shipcalc { width: 100%; max-width: 100%; }
+body.in-extension.settings-open { padding-right: 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="tabs" role="group" aria-label="表の切り替え">
+    <button type="button" id="tabProfit" aria-pressed="true">利益早見表</button>
+    <button type="button" id="tabRev" aria-pressed="false">仕入れ価格早見表</button>
+  </div>
+  <h1 id="h1">利益早見表</h1>
+
+  <div class="card inputs">
+    <div class="hidden" id="revSwitch" style="grid-column:1/-1">
+      <label id="revModeLabel">入力する価格の意味</label>
+      <div class="seg" role="group" aria-labelledby="revModeLabel">
+        <button type="button" id="revExcl" aria-pressed="true">関税を含まない販売価格</button>
+        <button type="button" id="revIncl" aria-pressed="false">関税込み価格</button>
+      </div>
+    </div>
+    <div id="costBox"><label for="cost">仕入れ（円）</label><input id="cost" type="text" inputmode="decimal" autocomplete="off"></div>
+    <div id="revBox" class="hidden"><label for="revPrice" id="revPriceLabel">販売価格（$）</label><input id="revPrice" type="text" inputmode="decimal" autocomplete="off"></div>
+    <div><label for="ship">送料（円）</label><input id="ship" type="text" inputmode="decimal" autocomplete="off"><div class="shcap" id="shipCap"></div></div>
+  </div>
+
+  <div class="controls">
+    <div class="ctl">
+      <span class="caplabel" id="modeLabel">利益の決め方</span>
+      <div class="seg" role="group" aria-labelledby="modeLabel">
+        <button type="button" id="modeRate" aria-pressed="true">利益率で計算</button>
+        <button type="button" id="modeAmount" aria-pressed="false">利益額で計算</button>
+      </div>
+    </div>
+    <div class="ctl capblock" id="capRow">
+      <div class="caphead">
+        <span class="caplabel" id="capTitle"></span>
+        <button type="button" class="smallbtn" id="capToggle" aria-expanded="true" aria-controls="capBody">閉じる</button>
+      </div>
+      <div id="capBody">
+        <div class="capbtns" id="capBtns" role="group" aria-label="送料上限カテゴリ"></div>
+        <span class="capnote" id="capNote"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <p class="summary" id="summary"></p>
+    <div class="toolbtns">
+      <button class="primary" id="shipToggle" type="button" aria-expanded="false" aria-controls="shipcalc">送料計算</button>
+      <button class="primary" id="toggle" type="button" aria-expanded="false" aria-controls="settings">設定</button>
+      <a class="guidelink" id="guideLink" href="guide.html" target="_blank" rel="noopener">使い方</a>
+      <a class="guidelink hidden" id="webLink" href="https://naokijodan.github.io/profit-matrix/" target="_blank" rel="noopener">ウェブ版</a>
+    </div>
+  </div>
+
+  <div id="result" aria-live="polite"></div>
+
+  <div id="settings" class="card" role="region" aria-labelledby="settingsTitle">
+    <div class="settings-head">
+      <h2 id="settingsTitle" tabindex="-1">設定</h2>
+      <button type="button" id="closeSettings">閉じる</button>
+    </div>
+    <p class="note" style="margin:0 0 12px">変えると、表がすぐに変わります。</p>
+    <div id="fields"></div>
+    <div class="actions">
+      <button type="button" id="reset">初期値に戻す</button>
+      <span class="inline" id="resetMsg"></span>
+    </div>
+    <p class="note">変更は自動で保存されます（このブラウザの中だけに保存）。</p>
+  </div>
+
+  <div id="shipcalc" class="card" role="region" aria-labelledby="shipTitle">
+    <div class="settings-head">
+      <h2 id="shipTitle" tabindex="-1">送料計算</h2>
+      <button type="button" id="closeShip">閉じる</button>
+    </div>
+    <p class="note" style="margin:0 0 12px">変えると、下の一覧がすぐに変わります。</p>
+    <div id="shipfields"></div>
+    <div class="inline ok" id="shMsg" role="status"></div>
+    <p class="note">変更は自動で保存されます（このブラウザの中だけに保存）。料金は一括シートの送料表と同じ考え方で計算した目安です。</p>
+  </div>
+</div>
+
+<script>
+// CALC-START
+function round2(v) { return Math.round(v * 100) / 100; }
+function nz(v) { return v === 0 ? 0 : v; } // -0 を 0 にそろえる
+// 想定関税の式（利益早見表と仕入れ価格早見表の両方が使う。式はここ1か所だけ）
+// 戻り値 null は計算不可（1 − 手数料 − 広告費 が小さすぎる）。k と c は「関税込み価格 = R + R×k + c」の k と c
+function tariffInputs(s, adRate) {
+  var tariffBase = 1 - s.feeRate - adRate;
+  if (!(tariffBase >= 1e-9)) return null;
+  var fx = s.exchangeRate;
+  var adj = s.tariffRate / tariffBase * s.safetyFactor;
+  var ceUSD = s.useCpassEconomy ? s.ceCustomsFeeYen / fx : 0;
+  var euUSD = s.euShippingDiffYen / fx;
+  return {
+    adj: adj, ceUSD: ceUSD, euUSD: euUSD,
+    k: adj * (1 + s.processingFeeRate) + s.vatRate * s.processingFeeRate,
+    c: ceUSD + s.mpfUSD + euUSD
+  };
+}
+// 販売価格 R から、想定関税・関税込み価格・調整後の出品価格（調整なしは null）
+function tariffFor(s, ti, R) {
+  var tariffUSD = round2(
+    R * ti.adj * (1 + s.processingFeeRate)
+    + R * s.vatRate * s.processingFeeRate
+    + ti.ceUSD
+    + s.mpfUSD
+    + ti.euUSD
+  );
+  var priceWithTariffUSD = round2(R + tariffUSD);
+  var adjustedListingPriceUSD = (s.adjustEnabled && tariffUSD >= s.adjustThresholdUSD)
+    ? nz(round2(priceWithTariffUSD - s.adjustThresholdUSD)) : null;
+  return { tariffUSD: nz(tariffUSD), priceWithTariffUSD: nz(priceWithTariffUSD), adjustedListingPriceUSD: adjustedListingPriceUSD };
+}
+function calcInternal(s, cost, shipping, adRate, mode, x) {
+  var fee = s.feeRate, pay = s.payoneerRate, fx = s.exchangeRate;
+  var denominator, numerator;
+  if (mode === 'amount') {
+    denominator = 1 - (fee + adRate + pay);
+    numerator = cost + shipping + x;
+  } else {
+    denominator = 1 - (fee + x + adRate + pay);
+    numerator = cost + shipping;
+  }
+  if (!(denominator >= 1e-9)) return { ok: false, reason: 'rates' };
+  var ti = tariffInputs(s, adRate);
+  if (ti === null) return { ok: false, reason: 'tariff' };
+  var sellingPriceUSD = Math.round(numerator / denominator / fx * 100) / 100;
+  var t = tariffFor(s, ti, sellingPriceUSD);
+  var profitYen = (mode === 'amount') ? x
+    : Math.round(sellingPriceUSD * fx * (1 - (fee + adRate + pay)) - cost - shipping);
+  var profitRatePct = (sellingPriceUSD * fx > 0) ? nz(profitYen / (sellingPriceUSD * fx) * 100) : null;
+  return {
+    ok: true,
+    sellingPriceUSD: nz(sellingPriceUSD),
+    tariffUSD: t.tariffUSD,
+    priceWithTariffUSD: t.priceWithTariffUSD,
+    profitYen: nz(profitYen),
+    profitRatePct: profitRatePct,
+    adjustedListingPriceUSD: t.adjustedListingPriceUSD
+  };
+}
+// 利益率（小数）で決める
+function calcRow(s, cost, shipping, adRate, profitRate) {
+  return calcInternal(s, cost, shipping, adRate, 'rate', profitRate);
+}
+// 利益額（円）で決める
+function calcRowAmount(s, cost, shipping, adRate, profitTargetYen) {
+  return calcInternal(s, cost, shipping, adRate, 'amount', profitTargetYen);
+}
+
+// 全角数字などを半角に直す
+function normalizeText(str) {
+  return String(str).replace(/[０-９]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); })
+    .replace(/[．]/g, '.').replace(/[，]/g, ',').trim();
+}
+// 0以上の数ならその数、そうでなければ null。カンマは 1,234 のような正しい3桁区切りだけ許可
+// 10億を超える数は使えない数として扱う（表に 1e+21 のような表記が出ないようにするため）
+var MAX_INPUT = 1000000000;
+function parseNum(str) {
+  var t = normalizeText(str);
+  if (!/^(\d{1,3}(,\d{3})+|\d+)(\.\d+)?$|^\.\d+$/.test(t)) return null;
+  var n = Number(t.replace(/,/g, ''));
+  return (isFinite(n) && n <= MAX_INPUT) ? n : null;
+}
+function withCommas(intStr) { return intStr.replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+function formatYen(x) {
+  var n = Math.round(x);
+  if (n === 0) return '0';
+  return (n < 0 ? '-' : '') + withCommas(String(Math.abs(n)));
+}
+function formatUsd(x) {
+  var t = Math.abs(x).toFixed(2), neg = x < 0 && Number(t) !== 0;
+  var parts = t.split('.');
+  return (neg ? '-' : '') + withCommas(parts[0]) + '.' + parts[1];
+}
+// 率（%）の表示。小数4桁まで・末尾の0は消す・「1e-7」のような表記は使わない。
+// 4桁で0になるが0ではない値は、小数のまま（例 0.0000001）で表示する。数として読めない文字は null
+function formatPercent(x) {
+  var n = typeof x === 'string' ? parseNum(x) : x;
+  if (n === null || typeof n !== 'number' || !isFinite(n)) return null;
+  var t = n.toFixed(4).replace(/\.?0+$/, '');
+  if (t === '' || t === '-0') t = '0';
+  if (t === '0' && n !== 0) t = n.toFixed(20).replace(/\.?0+$/, '');
+  return t;
+}
+// CALC-END
+
+// BOX-START
+// 入力欄のグループ（広告費率・利益率・利益額）を読む。
+// raws: 各欄の文字列。kind: 'rate'（100未満）か 'amount'。defaults: 初期値の配列。
+// 戻り値: values（小さい順・重複なし）、invalid（欄ごとの不正フラグ。空欄は不正ではなく「使わない」）、fellBack
+function evalGroup(raws, kind, defaults) {
+  var vals = [], invalid = [];
+  raws.forEach(function (raw) {
+    if (normalizeText(raw) === '') { invalid.push(false); return; }
+    var n = parseNum(raw);
+    var good = n !== null && (kind !== 'rate' || n < 100) && (n === 0 || n >= 1e-12);
+    invalid.push(!good);
+    if (good && vals.indexOf(n) < 0) vals.push(n);
+  });
+  function asc(a, b) { return a - b; }
+  if (!vals.length) return { values: defaults.slice().sort(asc), invalid: invalid, fellBack: true };
+  vals.sort(asc);
+  return { values: vals, invalid: invalid, fellBack: false };
+}
+// BOX-END
+
+// CAP-START
+var CAP_CATEGORIES = ['汎用（上限なし）', 'Video Games（$20）', 'Books（$20）', 'Movies & TV（$20）', 'Music（$25）', 'Game Consoles（$50）'];
+// カテゴリ名の中の「$」の後ろの金額が上限。金額が無い（汎用）ときは general を使う
+function effectiveThreshold(categoryLabel, generalValue) {
+  var m = /[$＄]\s*(\d+(?:\.\d+)?)/.exec(String(categoryLabel));
+  return m ? Number(m[1]) : generalValue;
+}
+// 説明用の例文。固定の入力から計算して作る
+function adjustExampleText() {
+  var label = 'Video Games（$20）', selling = 60, tariff = 22;
+  var cap = effectiveThreshold(label, 500);
+  var withTariff = selling + tariff, listing = withTariff - cap;
+  return '例: Video Games（上限' + cap + 'ドル）で、販売価格' + selling + 'ドル・想定関税' + tariff
+    + 'ドルの場合 → 関税込み価格' + withTariff + 'ドル − ' + cap + 'ドル ＝ 出品価格' + listing + 'ドル';
+}
+// 買い手に「関税として請求する額」。調整ありの行は上限額、なければ想定関税
+function chargedTariffUSD(row, cap) {
+  return row.adjustedListingPriceUSD !== null ? cap : row.tariffUSD;
+}
+// 表の下の説明を出すか。表示している行のうち、調整あり（赤い2行）が出る行が1つでもあるとき。
+// 「利益が出せない」「計算不可」の行は数えない
+function legendVisible(results) {
+  return results.some(function (r) { return !!r && r.ok === true && !r.unreachable && r.adjustedListingPriceUSD !== null; });
+}
+// CAP-END
+
+// SHIP-START
+// 送料計算（一括シートの SHIPPING_COST_FOR_CALCULATOR と同じ手順）。画面には触れない関数だけ。
+var SHIP_METHODS = ['ePacket', 'Cpass-Economy', 'EMS', 'Cpass-FedEx', 'Cpass-DHL', 'eLogistics'];
+// 一括シートが「別の方法（Cpass-FedEx）に切り替える」境目（重さ・g）
+var SHIP_LIMITS = { 'ePacket': 2000, 'Cpass-Economy': 25000, 'EMS': 30000 };
+var SHIP_COLS = { 'ePacket': 2, 'Cpass-Economy': 3, 'EMS': 4, 'Cpass-FedEx': 5, 'Cpass-DHL': 6, 'eLogistics': 7 };
+// 料金表（shipping-rates.json の bands と同じ）。列: [から(g), まで(g), ePacket, Cpass-Economy, EMS, Cpass-FedEx, Cpass-DHL, eLogistics]。null は空欄（まで=null は上限なし）
+var SHIP_BANDS = [
+  [1, 100, 1200, 1227, 3900, 2115, 2454, 3700],
+  [101, 200, 1410, 1367, 3900, 2115, 2454, 3700],
+  [201, 300, 1620, 1581, 3900, 2115, 2454, 3700],
+  [301, 400, 1830, 1778, 3900, 2115, 2454, 3700],
+  [401, 500, 2040, 2060, 3900, 2115, 2454, 3700],
+  [501, 600, 2250, 2222, 4180, 2599, 2780, 3700],
+  [601, 700, 2460, 2321, 4460, 2599, 2780, 3700],
+  [701, 800, 2670, 2703, 4740, 2599, 2780, 3700],
+  [801, 900, 2880, 2820, 5020, 2599, 2780, 3700],
+  [901, 1000, 3090, 3020, 5300, 2599, 2780, 3700],
+  [1001, 1100, 3300, 3136, 5990, 2840, 3106, 3900],
+  [1101, 1200, 3510, 3250, 5990, 2840, 3106, 3900],
+  [1201, 1250, 3720, 3366, 5990, 2840, 3106, 3900],
+  [1251, 1300, 3720, 3366, 6600, 2840, 3106, 3900],
+  [1301, 1400, 3930, 3704, 6600, 2840, 3106, 3900],
+  [1401, 1500, 4140, 3816, 6600, 2840, 3106, 3900],
+  [1501, 1600, 4350, 3935, 7290, 3108, 3432, 4100],
+  [1601, 1700, 4560, 4046, 7290, 3108, 3432, 4100],
+  [1701, 1750, 4770, 4165, 7290, 3108, 3432, 4100],
+  [1751, 1800, 4770, 4165, 7900, 3108, 3432, 4100],
+  [1801, 1900, 4980, 5056, 7900, 3108, 3432, 4100],
+  [1901, 2000, 5190, 5245, 7900, 3108, 3432, 4100],
+  [2001, 2500, null, 5582, 9100, 3383, 3758, 4300],
+  [2501, 3000, null, 6333, 10300, 3540, 4084, 5600],
+  [3001, 3500, null, 6958, 11500, 3593, 4410, 5900],
+  [3501, 4000, null, 7704, 12700, 4022, 4736, 6300],
+  [4001, 4500, null, 9135, 13900, 4451, 5062, 6600],
+  [4501, 5000, null, 11733, 15100, 4718, 5388, 7200],
+  [5001, 5500, null, 12500, 16300, 5043, 5714, 7900],
+  [5501, 6000, null, 13335, 17500, 5366, 6040, 8700],
+  [6001, 6500, null, 14160, 17500, 5735, 6366, 10300],
+  [6501, 7000, null, 15209, 19900, 6184, 6692, 12200],
+  [7001, 7500, null, 16058, 19900, 6683, 7018, 14100],
+  [7501, 8000, null, 16893, 22300, 6871, 7344, 16000],
+  [8001, 8500, null, 17562, 22300, 7060, 7670, 17900],
+  [8501, 9000, null, 18152, 24700, 7249, 7996, 19800],
+  [9001, 9500, null, 19106, 24700, 8865, 8322, 21800],
+  [9501, 10000, null, 19639, 27100, 9089, 8648, 23700],
+  [10001, 10500, null, 20276, 27100, 9346, 8974, 25600],
+  [10501, 11000, null, 20864, 29500, 9602, 9300, 25800],
+  [11001, 11500, null, 21565, 29500, 9861, 9626, 26100],
+  [11501, 12000, null, 22199, 31900, 10116, 9952, 26600],
+  [12001, 12500, null, 22887, 31900, 11439, 10278, 27100],
+  [12501, 13000, null, 23466, 34300, 11723, 10604, 27500],
+  [13001, 13500, null, 24054, 34300, 12006, 10930, 28000],
+  [13501, 14000, null, 24869, 36700, 12289, 11256, 28500],
+  [14001, 14500, null, 25200, 36700, 12573, 11582, 28900],
+  [14501, 15000, null, 25988, 39100, 12857, 11908, 29400],
+  [15001, 15500, null, 26656, 39100, 13140, 12234, 29900],
+  [15501, 16000, null, 28149, 41500, 14631, 12560, 30400],
+  [16001, 16500, null, 28775, 41500, 14940, 12886, 30800],
+  [16501, 17000, null, 29495, 43900, 15249, 13212, 31300],
+  [17001, 17500, null, 30196, 43900, 15559, 13538, 31800],
+  [17501, 18000, null, 30902, 46300, 15867, 13864, 32300],
+  [18001, 18500, null, 31478, 46300, 16177, 14190, 32700],
+  [18501, 19000, null, 32204, 48700, 16485, 14516, 33200],
+  [19001, 19500, null, 32936, 48700, 16794, 14842, 33700],
+  [19501, 20000, null, 33947, 51100, 17104, 15168, 34200],
+  [20001, 20500, null, 34655, 51100, 20625, 15820, 34600],
+  [20501, 21000, null, 35426, 53500, 20625, 15820, 35300],
+  [21001, 21500, null, 36145, 53500, 21657, 16472, 35900],
+  [21501, 22000, null, 36859, 55900, 21657, 16472, 36500],
+  [22001, 22500, null, 37602, 55900, 22689, 17124, 37100],
+  [22501, 23000, null, 38516, 58300, 22689, 17124, 37800],
+  [23001, 23500, null, 39084, 58300, 23721, 17776, 38400],
+  [23501, 24000, null, 39678, 60700, 23721, 17776, 39000],
+  [24001, 24500, null, 40374, 60700, 24754, 18428, 39700],
+  [24501, 25000, null, 40955, 63100, 24754, 18428, 40300],
+  [25001, 26000, null, null, 65500, 25787, 19080, 40900],
+  [26001, 27000, null, null, 67900, 26819, 19732, 42200],
+  [27001, 28000, null, null, 70300, 27852, 20384, 43400],
+  [28001, 29000, null, null, 72700, 28885, 21036, 44700],
+  [29001, 30000, null, null, 75100, 29916, 21688, 45900],
+  [30001, null, null, null, null, 31920, 31343, 47200]
+];
+// 重さに合う行を上から順に探す。値が0より大きければその値、空欄なら null
+function shipBandLookup(method, w) {
+  var col = SHIP_COLS[method];
+  for (var i = 0; i < SHIP_BANDS.length; i++) {
+    var b = SHIP_BANDS[i];
+    if (w >= b[0] && (b[1] === null || w <= b[1])) {
+      var v = b[col];
+      return (typeof v === 'number' && v > 0) ? v : null;
+    }
+  }
+  return null;
+}
+// 容積重量（g）。最低200g
+function shipVolWeight(l, wi, h, divisor) { return Math.max(200, Math.round(l * wi * h / divisor)); }
+// ePacket は表ではなく計算式（100gごとに210円）
+function shipEpacket(actual) { return 1200 + (Math.max(1, Math.ceil(actual / 100)) - 1) * 210; }
+function shipRound500(c) { return Math.ceil(c / 500) * 500; }
+// FedEx / DHL: 表の値 + 500g超過分 → 燃油 → 割引
+function shipSurcharged(base, rounded, extraPer500, fuelRate, disc) {
+  var extra = Math.max(0, (rounded - 500) / 500) * extraPer500;
+  var subTotal = base + extra;
+  var fuel = subTotal * fuelRate;
+  var discount = -(subTotal + fuel) * disc;
+  return Math.round(subTotal + fuel + discount);
+}
+// method: SHIP_METHODS のどれか。p: { fuelFedex, fuelDhl, cpassDiscount, extraFedex, extraDhl }（割合は小数）
+// 戻り値: { ok:true, yen, fallback, weightG }。fallback=true は、その方法では運べず Cpass-FedEx の料金が返った印。
+// weightG は、その方法で料金に使う重さ。入力が不正なら { ok:false }
+function shipCost(method, weight, length, width, height, p) {
+  var a = Number(weight), l = Number(length), wi = Number(width), h = Number(height);
+  if (![a, l, wi, h].every(function (v) { return isFinite(v) && v > 0; })) return { ok: false, reason: 'input' };
+  if (SHIP_METHODS.indexOf(method) < 0) return { ok: false, reason: 'method' };
+  var vol = shipVolWeight(l, wi, h, method === 'Cpass-Economy' ? 8 : 5);
+  var c = Math.max(a, vol);
+  function cf(cc) {
+    var r = shipRound500(cc), base = shipBandLookup('Cpass-FedEx', r);
+    if (base === null) return null;
+    return shipSurcharged(base, r, p.extraFedex, p.fuelFedex, p.cpassDiscount);
+  }
+  function res(yen, fallback, weightG) {
+    return yen === null ? { ok: false, reason: 'table' } : { ok: true, yen: yen, fallback: fallback, weightG: weightG };
+  }
+  if (method === 'ePacket') {
+    return a <= SHIP_LIMITS['ePacket'] ? res(shipEpacket(a), false, a) : res(cf(c), true, a);
+  }
+  if (method === 'Cpass-Economy') {
+    var ce = shipBandLookup('Cpass-Economy', c);
+    return ce !== null ? res(Math.round(ce), false, c) : res(cf(c), true, c);
+  }
+  if (method === 'EMS') {
+    var ems = shipBandLookup('EMS', a);
+    return ems !== null ? res(ems, false, a) : res(cf(c), true, a);
+  }
+  var rounded = shipRound500(c);
+  if (method === 'Cpass-FedEx') return res(cf(c), false, rounded);
+  if (method === 'Cpass-DHL') {
+    var bd = shipBandLookup('Cpass-DHL', rounded);
+    return res(bd === null ? null : shipSurcharged(bd, rounded, p.extraDhl, p.fuelDhl, p.cpassDiscount), false, rounded);
+  }
+  var be = shipBandLookup('eLogistics', rounded);
+  return res(be === null ? null : Math.round(be), false, rounded);
+}
+// SHIP-END
+
+// FORM-START
+// 入力の判定と保存データの読み込み（画面には触れない関数だけ）
+var SHIP_WEIGHT_MAX = 68000;   // FedEx / DHL / eLogistics の上限（g）。一括シートの設定値
+var SHIP_UNLIMITED = ['Cpass-FedEx', 'Cpass-DHL', 'eLogistics'];
+var SHDEFS = [
+  { k: 'shWeight', t: '重さ（g）', d: '荷物の重さ（梱包後）です。', d2: '小数の重さは、切り上げて計算します。', def: '200', unit: 'g', opts: [100, 200, 300, 400, 500, 750, 1000, 1500, 2000, 2500, 3000, 4000, 5000, 7500, 10000, 15000, 20000, 30000] },
+  { k: 'shL', t: '長さ（cm）', d: '荷物の長さ（梱包後）です。容積重量の計算に使います。', def: '25', unit: 'cm', opts: [5, 10, 15, 20, 25, 30, 40, 50, 60, 80, 100] },
+  { k: 'shW', t: '幅（cm）', d: '荷物の幅（梱包後）です。容積重量の計算に使います。', def: '15', unit: 'cm', opts: [5, 10, 15, 20, 25, 30, 40, 50, 60, 80, 100] },
+  { k: 'shH', t: '高さ（cm）', d: '荷物の高さ（梱包後）です。容積重量の計算に使います。', def: '10', unit: 'cm', opts: [5, 10, 15, 20, 25, 30, 40, 50, 60, 80, 100] },
+  { k: 'shFuelF', t: '燃油サーチャージ FedEx（%）', d: 'FedExの送料にかかる、燃料費の上乗せ割合です。', def: '40', unit: '%', pct: true, max: 100, opts: [0, 20, 25, 29.75, 30, 35, 40, 45, 50] },
+  { k: 'shFuelD', t: '燃油サーチャージ DHL（%）', d: 'DHLの送料にかかる、燃料費の上乗せ割合です。', def: '40', unit: '%', pct: true, max: 100, opts: [0, 20, 25, 29.75, 30, 35, 40, 45, 50] },
+  { k: 'shDisc', t: 'Cpass割引（%）', d: 'Cpassの料金から値引きされる割合です（FedEx・DHLだけに使います）。', def: '0', unit: '%', pct: true, max: 100, opts: [0, 1, 2, 3, 5, 10] },
+  { k: 'shExF', t: '超過料金 FedEx（500gあたり・円）', d: '一括シートの『割増料金』と同じ項目です。500gを超えた分について、500gごとに料金表の金額へ加えて計算します。', def: '115', unit: '円', max: 100000, opts: [0, 50, 100, 115, 150, 200] },
+  { k: 'shExD', t: '超過料金 DHL（500gあたり・円）', d: '一括シートの『割増料金』と同じ項目です。500gを超えた分について、500gごとに料金表の金額へ加えて計算します。', def: '96', unit: '円', max: 100000, opts: [0, 50, 96, 100, 150, 200] }
+];
+// 入力された文字に合う選択肢を返す（数として比べる。合わなければ '__custom' = 自分で入力）
+function pickMatch(raw, opts) {
+  var n = parseNum(raw === undefined || raw === null ? '' : raw);
+  if (n === null) return '__custom';
+  for (var i = 0; i < opts.length; i++) { if (Number(opts[i]) === n) return String(opts[i]); }
+  return '__custom';
+}
+// 重さ・大きさの入力。raw: { weight, length, width, height }（文字列）。空欄や0以下は使えない（空欄を0として計算しない）。
+// 小数の重さは切り上げて整数gにする。bad は「空でないのに使えない」欄
+function validateShipInputs(raw) {
+  var keys = ['weight', 'length', 'width', 'height'], v = {}, bad = {}, ok = true;
+  keys.forEach(function (k) {
+    var n = parseNum(raw[k] === undefined || raw[k] === null ? '' : raw[k]);
+    v[k] = (n !== null && n > 0) ? n : null;
+    if (v[k] === null) { ok = false; if (normalizeText(raw[k] === undefined || raw[k] === null ? '' : raw[k]) !== '') bad[k] = true; }
+  });
+  return { ok: ok, w: ok ? Math.ceil(v.weight) : 0, l: v.length, wi: v.width, h: v.height, bad: bad };
+}
+// 燃油などの設定。state: { shFuelF, shFuelD, shDisc, shExF, shExD }（文字列）。%はここで1回だけ小数にする。不正な欄は初期値で代用
+function validateFuelSection(state) {
+  var out = {}, bad = {}, anyBad = false;
+  SHDEFS.slice(4).forEach(function (f) {
+    var n = parseNum(state[f.k] === undefined || state[f.k] === null ? '' : state[f.k]);
+    if (n === null || n > f.max) { bad[f.k] = true; anyBad = true; n = Number(f.def); }
+    out[f.k] = f.pct ? n / 100 : n;
+  });
+  return { p: { fuelFedex: out.shFuelF, fuelDhl: out.shFuelD, cpassDiscount: out.shDisc, extraFedex: out.shExF, extraDhl: out.shExD }, bad: bad, anyBad: anyBad };
+}
+// 一覧に「対象外」と出すか。r は shipCost の結果。戻り値: null（使える）か { limit }
+function shipAvailability(method, r) {
+  if (!r || !r.ok) return { limit: null };
+  if (r.fallback) return { limit: SHIP_LIMITS[method] };
+  if (SHIP_UNLIMITED.indexOf(method) >= 0 && r.weightG > SHIP_WEIGHT_MAX) return { limit: SHIP_WEIGHT_MAX };
+  return null;
+}
+// 保存データ（何が入っていても壊れないように読む）。base: 初期の状態。戻り値: { state, inputs, applied }
+function loadStored(o, base) {
+  var st = {}, inputs = { cost: '5000', ship: '1500' }, applied = null;
+  Object.keys(base).forEach(function (k) { st[k] = base[k]; });
+  if (o === null || typeof o !== 'object' || Array.isArray(o)) return { state: st, inputs: inputs, applied: null };
+  function own(x, k) { return Object.prototype.hasOwnProperty.call(x, k); }
+  Object.keys(base).forEach(function (k) {
+    if (!own(o, k)) return;
+    var v = o[k];
+    if (typeof base[k] === 'boolean') { if (typeof v === 'boolean') st[k] = v; }
+    else if (k === 'capCategory') { if (typeof v === 'string' && CAP_CATEGORIES.indexOf(v) >= 0) st[k] = v; }
+    else if (k === 'profitMode') { if (v === 'rate' || v === 'amount') st[k] = v; }
+    else if (k === 'tab') { if (v === 'profit' || v === 'rev') st[k] = v; }
+    else if (k === 'revMode') { if (v === 'excl' || v === 'incl') st[k] = v; }
+    else if (typeof v === 'string') st[k] = v;
+  });
+  var inp = own(o, 'inputs') ? o.inputs : null;
+  if (inp !== null && typeof inp === 'object' && !Array.isArray(inp)) {
+    if (typeof inp.cost === 'string') inputs.cost = inp.cost;
+    if (typeof inp.ship === 'string') inputs.ship = inp.ship;
+  }
+  var a = own(o, 'applied') ? o.applied : null;
+  if (a !== null && typeof a === 'object' && !Array.isArray(a) && SHIP_METHODS.indexOf(a.m) >= 0
+    && [a.weightEntered, a.weightG, a.yen].every(function (x) { return typeof x === 'number' && isFinite(x) && x > 0; })
+    && inputs.ship === String(a.yen)) {
+    applied = { m: a.m, weightEntered: a.weightEntered, weightG: a.weightG, yen: a.yen };
+  }
+  return { state: st, inputs: inputs, applied: applied };
+}
+// 初期値に戻す。初期化: 設定・利益の決め方・カテゴリ・送料計算の全欄。残す: タブ・入力した仕入れ・価格・価格の意味・送料・カテゴリ欄の開閉。
+// 消す: 送料計算から設定した記録（キャプション・確認メッセージ）。戻り値: { state, inputs, applied, message }
+var RESET_KEEP = ['tab', 'capOpen', 'revPrice', 'revMode'];
+function resetScope(state, inputs, applied, base) {
+  var st = {};
+  Object.keys(base).forEach(function (k) { st[k] = base[k]; });
+  RESET_KEEP.forEach(function (k) { if (state && Object.prototype.hasOwnProperty.call(state, k)) st[k] = state[k]; });
+  var msg = '設定を初期値に戻しました。利益の決め方・送料上限カテゴリ・送料計算の条件も初期値に戻っています。入力した仕入れ・価格・送料はそのままです。';
+  if (applied) msg += '送料計算から設定した表示は消しました。';
+  return { state: st, inputs: { cost: inputs.cost, ship: inputs.ship }, applied: null, message: msg };
+}
+// FORM-END
+
+// REV-START
+// 仕入れ価格早見表の計算（画面には触れない関数だけ）。率は小数。
+// P: 入力した価格。priceMode: 'excl'（関税を含まない販売価格）か 'incl'（関税込み価格）。
+// pmode: 'rate'（x は利益率・小数）か 'amount'（x は利益額・円）。想定関税の式は tariffInputs / tariffFor（利益早見表と共通）
+function calcRev(s, P, priceMode, shipping, adRate, pmode, x) {
+  var fee = s.feeRate, pay = s.payoneerRate, fx = s.exchangeRate;
+  var ti = tariffInputs(s, adRate);
+  if (ti === null) return { ok: false, reason: 'tariff' };
+  var R;
+  if (priceMode === 'incl') {
+    R = round2((P - ti.c) / (1 + ti.k));
+    if (!(R > 0)) return { ok: false, reason: 'price' };
+  } else {
+    R = round2(P);
+  }
+  var t = tariffFor(s, ti, R);
+  var costYen, profitYen;
+  if (pmode === 'amount') {
+    if (!(1 - (fee + adRate + pay) >= 1e-9)) return { ok: false, reason: 'rates' };
+    costYen = Math.floor(R * fx * (1 - (fee + adRate + pay)) - shipping - x);
+    profitYen = x;
+  } else {
+    var den = 1 - (fee + x + adRate + pay);
+    if (!(den >= 1e-9)) return { ok: false, reason: 'rates' };
+    costYen = Math.floor(R * fx * den - shipping);
+    profitYen = Math.round(R * fx * (1 - (fee + adRate + pay)) - costYen - shipping);
+  }
+  return {
+    ok: true,
+    sellingPriceUSD: nz(R),
+    tariffUSD: t.tariffUSD,
+    priceWithTariffUSD: t.priceWithTariffUSD,
+    adjustedListingPriceUSD: t.adjustedListingPriceUSD,
+    costYen: nz(costYen),
+    unreachable: costYen < 0,   // 指定した利益を出せる仕入れ価格がない
+    profitYen: nz(profitYen),
+    profitRatePct: (R * fx > 0) ? nz(profitYen / (R * fx) * 100) : null
+  };
+}
+// 販売価格（ドル・小数2桁まで）と送料（円）の入力。価格は0より大きい数、送料は0以上
+function validateRevInputs(priceRaw, shipRaw) {
+  var pt = normalizeText(priceRaw === undefined || priceRaw === null ? '' : priceRaw);
+  var m = /^(.*\.\d{2})0+$/.exec(pt);   // 12.300 は 12.30（余分な桁が0だけなら受け付ける）
+  if (m) pt = m[1];
+  var p = parseNum(pt), decimals = false;
+  if (p !== null && /\.\d{3,}/.test(pt)) { p = null; decimals = true; }
+  if (p !== null && !(p > 0)) p = null;
+  var sh = parseNum(shipRaw === undefined || shipRaw === null ? '' : shipRaw);
+  return { ok: p !== null && sh !== null, price: p, ship: sh, badPrice: pt !== '' && p === null, decimals: decimals };
+}
+function revSummaryText(priceMode) {
+  return priceMode === 'incl' ? '入力した価格は関税込み価格' : '入力した価格は関税を含まない販売価格';
+}
+// REV-END
+
+// EXT-START
+// 拡張機能かどうかで変わるリンク先（純粋な関数。protocol は location.protocol の値）
+function extensionUrls(protocol) {
+  var inExt = protocol === 'chrome-extension:';
+  return {
+    inExtension: inExt,
+    guideUrl: inExt ? 'https://naokijodan.github.io/profit-matrix/guide.html' : 'guide.html',
+    webUrl: 'https://naokijodan.github.io/profit-matrix/',
+    showWebLink: inExt
+  };
+}
+// EXT-END
+
+(function () {
+  'use strict';
+  var STORE_KEY = 'profit-matrix-settings-v1';
+  var GENERAL = CAP_CATEGORIES[0];
+  var IN_EXTENSION = location.protocol === 'chrome-extension:';
+  (function () {
+    var u = extensionUrls(location.protocol);
+    $('guideLink').setAttribute('href', u.guideUrl);
+    $('webLink').setAttribute('href', u.webUrl);
+    if (u.showWebLink) $('webLink').classList.remove('hidden');
+    if (IN_EXTENSION) document.body.classList.add('in-extension');
+  })();
+
+  // 設定項目の定義（pct: 画面では%表示、計算では小数に変換）
+  var DEFS = [
+    { sec: 'fx', k: 'exchangeRate', t: '為替（円/ドル）', d: '1ドルが何円か。下のボタンで最新の値を取得できます。', def: '157.315109', kind: 'num', unit: '円', fx: true },
+    { sec: 'fx', k: 'feeRate', t: '手数料率（%）', d: '販売サイトに支払う手数料の割合です。', def: '18', kind: 'pct', opts: ['13','14','15','16','17','18','19','20','21','22','23','24','25'] },
+    { sec: 'fx', k: 'payoneerRate', t: 'ペイオニア手数料率（%）', d: '海外から代金を受け取る際の受取サービスの手数料の割合です。', def: '2', kind: 'pct', opts: ['0','0.5','1','1.5','2','2.5','3'] },
+    { sec: 'tax', k: 'tariffRate', t: '関税率（%）', d: '輸入先の国で商品にかかる関税（輸入時の税金）の割合です。', def: '15', kind: 'pct', opts: ['0','5','10','15','20','25','30'] },
+    { sec: 'tax', k: 'safetyFactor', t: '上乗せ係数（関税の安全係数）', d: '関税を少し多めに見積もるための掛け率です（1.03 = 3%多め）。', def: '1.03', kind: 'num', unit: '', opts: ['1','1.03','1.05','1.1'] },
+    { sec: 'tax', k: 'processingFeeRate', t: '関税処理手数料率（%）', d: '関税の支払いにかかる事務手数料の割合です。', def: '2.1', kind: 'pct', opts: ['0','1','2','2.1','3'] },
+    { sec: 'tax', k: 'vatRate', t: 'VAT率（%）', d: '欧州などでかかる付加価値税（消費税に近い税金）の割合です。', def: '8', kind: 'pct', opts: ['0','5','8','10','15','20','25'] },
+    { sec: 'tax', k: 'euShippingDiffYen', t: 'EU送料差額（円）', d: '一括シートの『EU送料差額』と同じ項目です。円をドルに直して、想定関税に加えます。', def: '1000', kind: 'num', unit: '円' },
+    { sec: 'tax', k: 'mpfUSD', t: 'MPF（ドル）', d: '米国の通関でかかる手続き費用（ドル）です。一括シートでは『Cpassでは免除中』として 0 になっています。', def: '0', kind: 'num', unit: 'ドル' },
+    { sec: 'tax', k: 'useCpassEconomy', t: 'Cpass-Economy で送る', d: 'Cpass-Economy（配送サービスの1つ）で送るときにチェックします。下の通関手数料が想定関税に加わります。', def: false, kind: 'bool' },
+    { sec: 'tax', k: 'ceCustomsFeeYen', t: '通関手数料（円）', d: 'Cpass-Economy 利用時にかかる通関の手数料です。', def: '296', kind: 'num', unit: '円' },
+    { sec: 'cap', k: 'adjustEnabled', t: '', cb: '想定関税が上限以上のとき、出品価格を調整する', def: true, kind: 'bool' },
+    { sec: 'cap', k: 'adjustThresholdUSD', t: '汎用のときの上限（ドル）', d: 'カテゴリが「汎用（上限なし）」のときだけ使う上限です。', d2: '『汎用』は、カテゴリ別の上限がない商品用です。その場合も、想定関税がこの金額以上になった行は、超えた分を出品価格に乗せます。', def: '500', kind: 'num', unit: 'ドル', optUnit: 'ドル', opts: ['100','200','300','400','500'] }
+  ];
+  var SECTIONS = [
+    { id: 'fx', title: '為替と手数料' },
+    { id: 'tax', title: '関税' },
+    { id: 'cap', title: '送料の上限（カテゴリ別）', intro: '一括シートと同じ考え方です。関税の分は送料として買い手に請求し、カテゴリごとに請求できる送料の上限があります。想定関税が上限以上になった行では、『関税込み価格 − 上限』を出品価格にします。', line: 'カテゴリは、画面上のボタンで選びます。', example: true }
+  ];
+  function seq(a, b, step) { var o = []; for (var v = a; v <= b; v += step) o.push(v); return o; }
+  var GROUPS = [
+    { id: 'ad', title: '広告費率（%）', d: '表に並べる広告費の割合です。使わない枠は『使わない』を選びます。', keys: ['ad1', 'ad2', 'ad3', 'ad4'], kind: 'rate', def: [0, 5, 10, 15], opts: seq(0, 15, 1) },
+    { id: 'pr', title: '利益率（%）', keys: ['pr1', 'pr2', 'pr3', 'pr4'], kind: 'rate', def: [0, 5, 10, 15], opts: seq(0, 45, 5) },
+    { id: 'pa', title: '利益額（円）', keys: ['pa1', 'pa2', 'pa3', 'pa4'], kind: 'amount', def: [1000, 2000, 3000, 5000], opts: [500, 1000, 1500, 2000, 3000, 4000, 5000, 10000] }
+  ];
+  var ORDINALS = ['1つ目', '2つ目', '3つ目', '4つ目'];
+  var SHFUEL = SHDEFS.slice(4);
+  function shOptLabel(f, v) { return withCommas(String(v)) + f.unit; }
+  var BOXKEYS = [];
+  GROUPS.forEach(function (g) { g.keys.forEach(function (k, i) { BOXKEYS.push({ k: k, g: g, i: i }); }); });
+
+  function $(id) { return document.getElementById(id); }
+  function boxUnit(g) { return g.kind === 'rate' ? '%' : '円'; }
+  function boxOptLabel(g, v) { return g.kind === 'rate' ? formatPercent(v) + '%' : withCommas(String(v)) + '円'; }
+
+  function defaults() {
+    var o = {};
+    DEFS.forEach(function (f) { o[f.k] = f.def; });
+    BOXKEYS.forEach(function (b) { o[b.k] = String(b.g.def[b.i] !== undefined ? b.g.def[b.i] : ''); });
+    o.profitMode = 'rate';
+    o.capCategory = GENERAL;
+    o.tab = 'profit'; o.revMode = 'excl'; o.revPrice = '100'; o.capOpen = true;
+    SHDEFS.forEach(function (f) { o[f.k] = f.def; });
+    return o;
+  }
+
+  // 状態は全て文字列（チェックだけ真偽値）で保持
+  var state = defaults();
+  var inputs = { cost: '5000', ship: '1500' };
+  var shipFrom = null;      // 送料計算から設定したときの記録 { m, weightEntered, weightG, yen }（手で直すと消える）
+  var customBox = {};       // 空の枠で「自分で入力」を選んでいる間の印
+  var fxToken = 0;          // 為替取得の受付番号（古い返事を捨てるため）
+  var fuelOpen = false;
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return;
+      var res = loadStored(JSON.parse(raw), defaults());
+      state = res.state; inputs = res.inputs; shipFrom = res.applied;
+    } catch (e) { /* 保存領域が使えなくても動く */ }
+  }
+  function save() {
+    try {
+      var o = {};
+      Object.keys(state).forEach(function (k) { o[k] = state[k]; });
+      o.inputs = { cost: inputs.cost, ship: inputs.ship };
+      o.applied = shipFrom;
+      localStorage.setItem(STORE_KEY, JSON.stringify(o));
+    } catch (e) { /* 無視 */ }
+  }
+
+  // 無効（グレー）にする欄
+  function isOff(k) {
+    if (k === 'ceCustomsFeeYen') return !state.useCpassEconomy;
+    if (k === 'adjustThresholdUSD') return !state.adjustEnabled || state.capCategory !== GENERAL;
+    return false;
+  }
+
+  // 画面の設定 -> 計算用の設定（小数）。不正な欄は初期値で代用し、bad に記録
+  function buildSettings() {
+    var s = {}, bad = {};
+    DEFS.forEach(function (f) {
+      if (f.kind === 'bool') { s[f.k] = !!state[f.k]; return; }
+      if (f.kind === 'choice') return;
+      var n = parseNum(state[f.k]);
+      if (n === null || (f.fx && (n < 100 || n > 200)) || (f.kind === 'pct' && n > 0 && n < 1e-12)) {
+        bad[f.k] = true;
+        n = parseNum(f.def);
+      }
+      s[f.k] = f.kind === 'pct' ? n / 100 : n;
+    });
+    var cat = CAP_CATEGORIES.indexOf(state.capCategory) >= 0 ? state.capCategory : GENERAL;
+    s.adjustThresholdUSD = effectiveThreshold(cat, s.adjustThresholdUSD);
+    var groups = {};
+    GROUPS.forEach(function (g) {
+      groups[g.id] = evalGroup(g.keys.map(function (k) { return state[k]; }), g.kind, g.def);
+    });
+    var mode = state.profitMode === 'amount' ? 'amount' : 'rate';
+    var capText;
+    if (!s.adjustEnabled) capText = '上限の調整なし';
+    else if (cat === GENERAL) capText = '上限 ' + s.adjustThresholdUSD + 'ドル（汎用）';
+    else capText = '上限 ' + cat.replace(/（.*$/, '') + ' $' + s.adjustThresholdUSD;
+    return { s: s, bad: bad, groups: groups, mode: mode, capText: capText };
+  }
+
+  var usd = formatUsd, yen = formatYen;
+  function pctText(x) { return formatPercent(x * 100); }
+  function pctLabel(n) { return formatPercent(n) + '%'; }
+
+  function renderSummary(b) {
+    var s = b.s;
+    var parts = ['為替 ' + s.exchangeRate.toFixed(2) + '円', '手数料 ' + pctText(s.feeRate) + '%',
+      'ペイオニア ' + pctText(s.payoneerRate) + '%', '関税率 ' + pctText(s.tariffRate) + '%'];
+    if (s.useCpassEconomy) parts.push('Cpass-Economy 通関手数料 ' + s.ceCustomsFeeYen + '円');
+    parts.push(b.capText);
+    parts.push(b.mode === 'amount' ? '利益は金額で指定' : '利益は率で指定');
+    if (state.tab === 'rev') parts.push(revSummaryText(state.revMode));
+    $('summary').textContent = parts.join(' ／ ');
+  }
+
+  function th(long, short, unit) {
+    return '<th scope="col"><span class="lg">' + long + '</span><span class="sh">' + short + '</span>'
+      + (unit ? '<br><small>' + unit + '</small>' : '') + '</th>';
+  }
+
+  function renderTabs() {
+    var rev = state.tab === 'rev';
+    $('tabProfit').setAttribute('aria-pressed', rev ? 'false' : 'true');
+    $('tabRev').setAttribute('aria-pressed', rev ? 'true' : 'false');
+    $('h1').textContent = rev ? '仕入れ価格早見表' : '利益早見表';
+    document.title = rev ? '仕入れ価格早見表' : '利益早見表';
+    $('costBox').classList.toggle('hidden', rev);
+    $('revBox').classList.toggle('hidden', !rev);
+    $('revPriceLabel').textContent = state.revMode === 'incl' ? '関税込み価格（$）' : '販売価格（$）';
+    $('revSwitch').classList.toggle('hidden', !rev);
+    $('revExcl').setAttribute('aria-pressed', state.revMode === 'incl' ? 'false' : 'true');
+    $('revIncl').setAttribute('aria-pressed', state.revMode === 'incl' ? 'true' : 'false');
+  }
+  function listingTd(r, adjusted) {
+    var listing = adjusted ? r.adjustedListingPriceUSD : r.sellingPriceUSD;
+    return '<td>' + usd(listing) + (adjusted ? '<span class="alt">調整あり</span>' : '') + '</td>';
+  }
+  function tariffTd(r, cap, adjusted) {
+    return '<td>' + usd(r.tariffUSD) + (adjusted ? '<span class="alt">関税の請求は $' + usd(chargedTariffUSD(r, cap)) + ' まで</span>' : '') + '</td>';
+  }
+  function legendHtml(cap) {
+    var capTxt = String(cap);
+    return '<p class="note legend">『調整あり』の行は、想定関税が上限（' + capTxt + 'ドル）以上です。関税として請求するのは' + capTxt
+      + 'ドルまでにして、残りを出品価格に乗せています。買い手が支払う合計は、関税込み価格と同じです。</p>';
+  }
+  function renderRev(b) {
+    var v = validateRevInputs(state.revPrice, inputs.ship);
+    $('revPrice').classList.toggle('bad', v.badPrice);
+    $('ship').classList.toggle('bad', v.ship === null && inputs.ship !== '');
+    var box = $('result');
+    if (!v.ok) {
+      box.innerHTML = '<div class="msg">' + (v.decimals ? '価格は小数2桁までで入力してください。' : '価格は0より大きい数字、送料は0以上の数字を入力してください。') + '</div>';
+      return;
+    }
+    var amountMode = b.mode === 'amount', cap = b.s.adjustThresholdUSD;
+    var pfs = amountMode ? b.groups.pa.values : b.groups.pr.values;
+    var rows = [], maxCost = 0;
+    b.groups.ad.values.forEach(function (ad, gi) {
+      pfs.forEach(function (pf, pi) {
+        var r = calcRev(b.s, v.price, state.revMode, v.ship, ad / 100, b.mode, amountMode ? pf : pf / 100);
+        rows.push({ ad: ad, pf: pf, gi: gi, first: pi === 0, r: r });
+        if (r.ok && !r.unreachable && r.costYen > maxCost) maxCost = r.costYen;
+      });
+    });
+    var h = '<div class="tablebox"><table class="revtable"><thead><tr>' + th('広告費率', '広告', '') + th('利益率', '利益率', '')
+      + th('仕入れ価格', '仕入れ', '（円）') + th('販売価格', '販売', '（$）') + th('想定関税', '関税', '（$）') + th('関税込み価格', '関税込み', '（$）')
+      + th('出品価格', '出品', '（$）') + th('利益額', '利益', '（円）') + '</tr></thead><tbody>';
+    rows.forEach(function (w) {
+      var r = w.r;
+      var rateCell = amountMode ? (r.ok ? (r.profitRatePct === null ? '－' : r.profitRatePct.toFixed(1) + '%') : yen(w.pf) + '円') : pctLabel(w.pf);
+      h += '<tr class="' + (w.gi % 2 ? 'g1' : 'g0') + (w.first ? ' first' : '') + '"><td>' + pctLabel(w.ad) + '</td><td>' + rateCell + '</td>';
+      if (!r.ok) {
+        var why = r.reason === 'price' ? '計算できません（価格が小さすぎます）' : '計算不可（率の合計が100%以上）';
+        h += '<td class="na" colspan="6">' + why + '</td></tr>';
+        return;
+      }
+      if (r.unreachable) {
+        h += '<td class="na" colspan="6">指定した利益を出せる仕入れ価格がありません</td></tr>';
+        return;
+      }
+      var adjusted = r.adjustedListingPriceUSD !== null;
+      var pc = r.costYen > 0 && maxCost > 0 ? ' style="background:rgba(var(--profit-rgb),' + (0.08 + 0.42 * r.costYen / maxCost).toFixed(3) + ')"' : '';
+      h += '<td class="hero"' + pc + '>' + yen(r.costYen) + '</td><td>' + usd(r.sellingPriceUSD) + '</td>' + tariffTd(r, cap, adjusted)
+        + '<td>' + usd(r.priceWithTariffUSD) + '</td>' + listingTd(r, adjusted)
+        + '<td>' + yen(r.profitYen) + '</td></tr>';
+    });
+    h += '</tbody></table></div><p class="note">仕入れ価格は、この金額までなら指定した利益が出る上限です（円未満は切り捨て）。'
+      + '販売価格は関税を含まない価格です。手数料・広告費・ペイオニア手数料は、販売価格に対して計算しています。出品価格は、調整がない行では販売価格と同じです。'
+      + (amountMode ? '利益率は、利益額 ÷ 販売価格（円換算）で計算した値です。' : '') + '</p>';
+    if (state.revMode === 'incl') h += '<p class="note">入力した関税込み価格から、販売価格を逆算しています。セント単位の四捨五入のため、表の関税込み価格が入力と1セントずれることがあります。</p>';
+    h += '<p class="note">この仕入れ価格を利益早見表に入れ直すと、端数の関係で、販売価格が1〜2セント、利益が数円ずれることがあります。</p>';
+    if (legendVisible(rows.map(function (w) { return w.r; }))) h += legendHtml(cap);
+    box.innerHTML = h;
+  }
+
+  function render() {
+    var b = buildSettings();
+    renderSummary(b);
+    if (state.tab === 'rev') { renderRev(b); return; }
+    var cost = parseNum(inputs.cost), ship = parseNum(inputs.ship);
+    $('cost').classList.toggle('bad', cost === null && inputs.cost !== '');
+    $('ship').classList.toggle('bad', ship === null && inputs.ship !== '');
+    var box = $('result');
+    if (cost === null || ship === null) {
+      box.innerHTML = '<div class="msg">仕入れと送料を入力してください（0以上の数字）</div>';
+      return;
+    }
+    var amountMode = b.mode === 'amount';
+    var pfs = amountMode ? b.groups.pa.values : b.groups.pr.values;
+    var rows = [], maxProfit = 0, cap = b.s.adjustThresholdUSD;
+    b.groups.ad.values.forEach(function (ad, gi) {
+      pfs.forEach(function (pf, pi) {
+        var r = amountMode ? calcRowAmount(b.s, cost, ship, ad / 100, pf) : calcRow(b.s, cost, ship, ad / 100, pf / 100);
+        rows.push({ ad: ad, pf: pf, gi: gi, first: pi === 0, r: r });
+        if (r.ok && r.profitYen > maxProfit) maxProfit = r.profitYen;
+      });
+    });
+    var h = '<div class="tablebox"><table><thead><tr>' + th('広告費率', '広告', '') + th('利益率', '利益率', '')
+      + th('販売価格', '販売', '（$）') + th('想定関税', '関税', '（$）') + th('関税込み価格', '関税込み', '（$）')
+      + th('出品価格', '出品', '（$）') + th('利益額', '利益', '（円）') + '</tr></thead><tbody>';
+    rows.forEach(function (w) {
+      var rateCell = amountMode ? (w.r.ok ? (w.r.profitRatePct === null ? '－' : w.r.profitRatePct.toFixed(1) + '%') : yen(w.pf) + '円') : pctLabel(w.pf);
+      h += '<tr class="' + (w.gi % 2 ? 'g1' : 'g0') + (w.first ? ' first' : '') + '"><td>' + pctLabel(w.ad) + '</td><td>' + rateCell + '</td>';
+      if (!w.r.ok) {
+        h += '<td class="na" colspan="5">計算不可（率の合計が100%以上）</td></tr>';
+        return;
+      }
+      var r = w.r;
+      var adjusted = r.adjustedListingPriceUSD !== null;
+      var pc = r.profitYen > 0 && maxProfit > 0 ? ' style="background:rgba(var(--profit-rgb),' + (0.08 + 0.42 * r.profitYen / maxProfit).toFixed(3) + ')"' : '';
+      h += '<td>' + usd(r.sellingPriceUSD) + '</td>' + tariffTd(r, cap, adjusted) + '<td>' + usd(r.priceWithTariffUSD)
+        + '</td>' + listingTd(r, adjusted)
+        + '<td class="profit' + (r.profitYen < 0 ? ' neg' : '') + '"' + pc + '>' + yen(r.profitYen) + '</td></tr>';
+    });
+    h += '</tbody></table></div><p class="note">販売価格は関税を含まない価格です。手数料・広告費・ペイオニア手数料は、販売価格に対して計算しています。出品価格は、調整がない行では販売価格と同じです。'
+      + (amountMode ? '利益率は、利益額 ÷ 販売価格（円換算）で計算した値です。' : '') + '</p>';
+    if (legendVisible(rows.map(function (w) { return w.r; }))) h += legendHtml(cap);
+    box.innerHTML = h;
+  }
+
+  // ---- 設定パネル ----
+  function fmtDef(f) {
+    if (f.kind === 'bool') return f.def ? '使う' : '使わない';
+    if (f.kind === 'choice') return f.def;
+    var p = String(f.def).split('.');
+    var t = withCommas(p[0]) + (p.length > 1 ? '.' + p[1] : '');
+    if (f.kind === 'pct') return t + '%';
+    return t + (f.unit || '');
+  }
+  function pickHtml(sid, iid, label, opts, optFn, extraOpt) {
+    var h = '<div class="pick"><select id="' + sid + '" aria-label="' + label + ' を一覧から選ぶ">';
+    opts.forEach(function (v) { h += '<option value="' + v + '">' + optFn(v) + '</option>'; });
+    h += '<option value="__custom">自分で入力</option>' + (extraOpt ? '<option value="__none">使わない</option>' : '') + '</select>'
+      + '<input type="text" id="' + iid + '" autocomplete="off" inputmode="decimal"></div>';
+    return h;
+  }
+  function fieldHtml(f) {
+    var h = '<div class="field" id="w_' + f.k + '">';
+    if (f.kind === 'bool') {
+      if (f.t) h += '<label class="t" for="f_' + f.k + '">' + f.t + '</label>';
+      if (f.d) h += '<p class="d">' + f.d + '</p>';
+      h += '<div class="row"><input type="checkbox" id="f_' + f.k + '"><label for="f_' + f.k + '">' + (f.cb || '使う') + '</label></div>';
+    } else {
+      h += '<label class="t" for="f_' + f.k + '">' + f.t + '</label><p class="d">' + f.d + '</p>' + (f.d2 ? '<p class="d">' + f.d2 + '</p>' : '');
+      if (f.kind === 'choice') {
+        h += '<select id="f_' + f.k + '" class="full">';
+        f.choices.forEach(function (v) { h += '<option value="' + v + '">' + v + '</option>'; });
+        h += '</select>';
+      } else if (f.opts) {
+        h += pickHtml('s_' + f.k, 'f_' + f.k, f.t, f.opts, function (v) { return v + (f.kind === 'pct' ? '%' : (f.optUnit || '')); }, false);
+      } else {
+        h += '<input type="text" id="f_' + f.k + '" autocomplete="off" inputmode="decimal">';
+      }
+    }
+    if (f.fx) h += '<div class="row" style="margin-top:6px"><button type="button" id="fxBtn">最新の為替を取得</button></div><div class="inline" id="fxMsg" role="status"></div>';
+    h += '<div class="init">初期値: ' + fmtDef(f) + '</div><div class="inline err" id="e_' + f.k + '"></div></div>';
+    return h;
+  }
+  function groupHtml(g) {
+    var h = '<div class="field" id="g_' + g.id + '"><label class="t" id="gl_' + g.id + '">' + g.title + (g.id === 'ad' ? '' : '<span class="badge hidden" id="use_' + g.id + '">いま使用中</span>') + '</label>';
+    if (g.d) h += '<p class="d">' + g.d + '</p>';
+    g.keys.forEach(function (k, i) {
+      h += '<div class="boxrow"><label for="f_' + k + '">' + ORDINALS[i] + '</label><div>'
+        + pickHtml('s_' + k, 'f_' + k, g.title + ' ' + ORDINALS[i], g.opts, function (v) { return boxOptLabel(g, v); }, true)
+        + '<div class="inline err" id="e_' + k + '"></div></div></div>';
+    });
+    h += '<div class="init">初期値: ' + g.def.map(function (v) { return boxOptLabel(g, v); }).join(' ／ ') + '</div>'
+      + '<div class="inline err" id="e_g_' + g.id + '"></div></div>';
+    return h;
+  }
+  function buildFields() {
+    var h = '<div class="sec"><h3>表に並べる条件</h3><div class="grid">';
+    h += groupHtml(GROUPS[0]);
+    h += '<p class="d" style="margin:0">どちらで計算するかは、画面上のボタンで切り替えます。</p>';
+    h += groupHtml(GROUPS[1]) + groupHtml(GROUPS[2]) + '</div></div>';
+    SECTIONS.forEach(function (sec) {
+      h += '<div class="sec"><h3>' + sec.title + '</h3>';
+      if (sec.intro) h += '<p class="d" style="margin:0 0 8px">' + sec.intro + '</p>';
+      if (sec.line) h += '<p class="d" style="margin:0 0 8px">' + sec.line + '</p>';
+      if (sec.example) h += '<p class="d ex" style="margin:0 0 12px">' + adjustExampleText() + '</p>';
+      h += '<div class="grid">';
+      DEFS.forEach(function (f) { if (f.sec === sec.id) h += fieldHtml(f); });
+      h += '</div></div>';
+    });
+    $('fields').innerHTML = h;
+
+    DEFS.forEach(function (f) {
+      var el = $('f_' + f.k);
+      el.addEventListener((f.kind === 'bool' || f.kind === 'choice') ? 'change' : 'input', function () {
+        state[f.k] = f.kind === 'bool' ? el.checked : el.value;
+        if (f.k === 'useCpassEconomy') $('shMsg').textContent = '';
+        save();
+        refresh();
+      });
+      if (f.opts) {
+        $('s_' + f.k).addEventListener('change', function (e) {
+          if (e.target.value === '__custom') { el.focus(); el.select(); return; }
+          state[f.k] = e.target.value;
+          el.value = state[f.k];
+          save();
+          refresh();
+        });
+      }
+    });
+    BOXKEYS.forEach(function (b) {
+      var el = $('f_' + b.k);
+      el.addEventListener('input', function () { state[b.k] = el.value; save(); refresh(); });
+      el.addEventListener('blur', function () {
+        if (customBox[b.k] && normalizeText(el.value) === '') { customBox[b.k] = false; syncPickers(); }
+      });
+      $('s_' + b.k).addEventListener('change', function (e) {
+        var v = e.target.value;
+        if (v === '__custom') { customBox[b.k] = true; el.focus(); el.select(); return; }
+        customBox[b.k] = false;
+        state[b.k] = v === '__none' ? '' : v;
+        el.value = state[b.k];
+        save();
+        refresh();
+      });
+    });
+    $('modeRate').addEventListener('click', function () { state.profitMode = 'rate'; save(); refresh(); });
+    $('modeAmount').addEventListener('click', function () { state.profitMode = 'amount'; save(); refresh(); });
+    $('fxBtn').addEventListener('click', fetchFx);
+  }
+  // ---- 送料上限カテゴリのボタン（画面の上） ----
+  function buildCap() {
+    var h = '';
+    CAP_CATEGORIES.forEach(function (c, i) { h += '<button type="button" data-cat="' + i + '" aria-pressed="false">' + c + '</button>'; });
+    $('capBtns').innerHTML = h;
+    $('capToggle').addEventListener('click', function () { state.capOpen = !state.capOpen; save(); refresh(); });
+    $('capBtns').addEventListener('click', function (e) {
+      var t = e.target.closest ? e.target.closest('button[data-cat]') : null;
+      if (!t || t.disabled) return;
+      state.capCategory = CAP_CATEGORIES[Number(t.getAttribute('data-cat'))];
+      save(); refresh();
+    });
+  }
+  function renderCap(b) {
+    var on = !!b.s.adjustEnabled;
+    var btns = $('capBtns').querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].setAttribute('aria-pressed', CAP_CATEGORIES[i] === state.capCategory ? 'true' : 'false');
+      btns[i].disabled = !on;
+    }
+    $('capNote').textContent = on ? '' : '設定で調整がオフになっています';
+    $('capTitle').textContent = '送料上限カテゴリ: ' + (on ? state.capCategory : '調整オフ（設定で変更できます）');
+    var open = !!state.capOpen;
+    $('capBody').classList.toggle('hidden', !open);
+    $('capToggle').setAttribute('aria-expanded', open ? 'true' : 'false');
+    $('capToggle').textContent = open ? '閉じる' : '開く';
+  }
+
+  // ---- 送料計算 ----
+  function buildShip() {
+    function shField(f) {
+      return '<div class="field"><label class="t" for="f_' + f.k + '">' + f.t + '</label><p class="d">' + f.d + '</p>' + (f.d2 ? '<p class="d">' + f.d2 + '</p>' : '')
+        + pickHtml('s_' + f.k, 'f_' + f.k, f.t, f.opts, function (v) { return shOptLabel(f, v); }, false)
+        + '<div class="init">初期値: ' + withCommas(f.def) + f.unit + '</div><div class="inline err" id="e_' + f.k + '"></div></div>';
+    }
+    var h = '<div class="sec"><div class="grid">';
+    SHDEFS.slice(0, 4).forEach(function (f) { h += shField(f); });
+    h += '</div></div>';
+    h += '<div class="sec"><h3>燃油・割引・超過料金</h3>'
+      + '<button type="button" class="smallbtn" id="fuelToggle" aria-expanded="false" aria-controls="fuelBox">燃油などの設定を開く</button>'
+      + '<div id="fuelBox" class="hidden"><div class="grid" style="margin-top:12px">';
+    SHFUEL.forEach(function (f) { h += shField(f); });
+    h += '</div></div></div>';
+    h += '<div class="sec"><h3>送料の目安</h3><div id="shVol"></div></div>';
+    $('shipfields').innerHTML = h;
+    SHDEFS.forEach(function (f) {
+      var el = $('f_' + f.k);
+      el.addEventListener('input', function () { state[f.k] = el.value; save(); $('shMsg').textContent = ''; renderShip(); });
+      $('s_' + f.k).addEventListener('change', function (e) {
+        if (e.target.value === '__custom') { el.focus(); el.select(); return; }
+        state[f.k] = e.target.value; el.value = state[f.k]; save(); $('shMsg').textContent = ''; renderShip();
+      });
+    });
+    $('fuelToggle').addEventListener('click', function () {
+      fuelOpen = !fuelOpen; applyFuelOpen();
+    });
+    $('shipcalc').addEventListener('click', function (e) {
+      var t = e.target.closest ? e.target.closest('button[data-m]') : null;
+      if (t) useShip(t.getAttribute('data-m'));
+    });
+  }
+  function applyFuelOpen() {
+    $('fuelBox').classList.toggle('hidden', !fuelOpen);
+    $('fuelToggle').setAttribute('aria-expanded', fuelOpen ? 'true' : 'false');
+    $('fuelToggle').textContent = fuelOpen ? '燃油などの設定を閉じる' : '燃油などの設定を開く';
+  }
+  // 燃油などの設定 -> 計算用（%は、ここで1回だけ小数にする）。不正な欄は初期値で代用
+  function shipInputs() {
+    var v = validateShipInputs({ weight: state.shWeight, length: state.shL, width: state.shW, height: state.shH });
+    var ids = { weight: 'shWeight', length: 'shL', width: 'shW', height: 'shH' };
+    Object.keys(ids).forEach(function (k) { $('f_' + ids[k]).classList.toggle('bad', !!v.bad[k]); });
+    return v;
+  }
+  var shipRes = {};
+  function renderShip() {
+    var sp = validateFuelSection(state);
+    SHFUEL.forEach(function (f) {
+      $('f_' + f.k).classList.toggle('bad', !!sp.bad[f.k]);
+      $('e_' + f.k).textContent = sp.bad[f.k] ? '入力が正しくないため、初期値を使っています（上限は ' + withCommas(String(f.max)) + f.unit + '）。' : '';
+    });
+    if (sp.anyBad && !fuelOpen) { fuelOpen = true; applyFuelOpen(); }
+    SHDEFS.forEach(function (f) { $('s_' + f.k).value = pickMatch(state[f.k], f.opts); });
+    var inp = shipInputs(), box = $('shVol');
+    shipRes = {};
+    if (!inp.ok) {
+      box.innerHTML = '<p class="inline err">重さと大きさを入力してください（0より大きい数字）</p>';
+      return;
+    }
+    var v5 = shipVolWeight(inp.l, inp.wi, inp.h, 5), v8 = shipVolWeight(inp.l, inp.wi, inp.h, 8);
+    var h = '<div class="volrow">箱の大きさから計算した重さ（容積重量）</div>'
+      + '<div class="volrow">Cpass-Economy 用（÷8）: <b>' + withCommas(String(v8)) + 'g</b></div>'
+      + '<div class="volrow">ほかの配送方法用（÷5）: <b>' + withCommas(String(v5)) + 'g</b></div><ul class="shlist">';
+    var over30k = false;
+    SHIP_METHODS.forEach(function (m) {
+      var r = shipCost(m, inp.w, inp.l, inp.wi, inp.h, sp.p);
+      if (!r.ok) return;
+      h += '<li class="shrow"><div class="shinfo"><b>' + m + '</b><span class="shsub">料金に使う重さ ' + withCommas(String(r.weightG)) + 'g</span></div>';
+      var av = shipAvailability(m, r);
+      if (av) {
+        h += '<div class="shyen na">対象外（' + withCommas(String(av.limit)) + 'gまで）<span class="shhint">ほかの配送方法を選んでください。</span></div></li>';
+        return;
+      }
+      if (r.weightG > 30000) over30k = true;
+      shipRes[m] = r;
+      h += '<div class="shyen">' + yen(r.yen) + '円</div><button type="button" data-m="' + m + '">この送料を使う</button></li>';
+    });
+    h += '</ul>';
+    if (over30k) h += '<p class="note">30kgを超える重さは、料金表が固定額のため、実際の料金と違う可能性があります。</p>';
+    box.innerHTML = h;
+  }
+  function renderShipCap() {
+    $('shipCap').textContent = shipFrom ? '送料計算から設定: ' + shipFrom.m + '（重さ' + withCommas(String(shipFrom.weightEntered)) + 'g、料金に使う重さ' + withCommas(String(shipFrom.weightG)) + 'g）' : '';
+  }
+  function useShip(m) {
+    var r = shipRes[m];
+    if (!r) return;
+    var wasOn = !!state.useCpassEconomy, isCE = m === 'Cpass-Economy';
+    inputs.ship = String(r.yen);
+    $('ship').value = inputs.ship;
+    var vi = validateShipInputs({ weight: state.shWeight, length: state.shL, width: state.shW, height: state.shH });
+    shipFrom = { m: m, weightEntered: vi.w, weightG: r.weightG, yen: r.yen };
+    state.useCpassEconomy = isCE;
+    save(); syncFields(); refresh(); renderShipCap();
+    var t = '送料を ' + yen(r.yen) + '円（' + m + '）にしました。';
+    if (isCE) t += 'Cpass-Economy の通関手数料も関税に加えます。';
+    else if (wasOn) t += 'Cpass-Economy の通関手数料は関税から外しました。';
+    flash($('shMsg'), 'ok', t, 0);
+    var nb = $('shVol').querySelector ? $('shVol').querySelector('button[data-m="' + m + '"]') : null;
+    if (nb) nb.focus();
+  }
+
+  // ドロップダウンを、今の入力値に合わせる
+  function syncPickers() {
+    DEFS.forEach(function (f) {
+      if (!f.opts) return;
+      var n = parseNum(state[f.k]), hit = '__custom';
+      f.opts.forEach(function (v) { if (n !== null && Number(v) === n) hit = v; });
+      $('s_' + f.k).value = hit;
+    });
+    BOXKEYS.forEach(function (b) {
+      var hit;
+      if (normalizeText(state[b.k]) === '') hit = customBox[b.k] ? '__custom' : '__none';
+      else {
+        var n = parseNum(state[b.k]);
+        hit = '__custom';
+        b.g.opts.forEach(function (v) { if (n !== null && v === n) hit = String(v); });
+      }
+      $('s_' + b.k).value = hit;
+    });
+  }
+  function syncFields() {
+    DEFS.forEach(function (f) {
+      var el = $('f_' + f.k);
+      if (f.kind === 'bool') el.checked = !!state[f.k]; else el.value = state[f.k];
+    });
+    BOXKEYS.forEach(function (b) { $('f_' + b.k).value = state[b.k]; });
+    SHDEFS.forEach(function (f) { $('f_' + f.k).value = state[f.k]; });
+  }
+  function refresh() {
+    var b = buildSettings();
+    DEFS.forEach(function (f) {
+      var off = isOff(f.k);
+      var el = $('f_' + f.k), e = $('e_' + f.k), isBad = !!b.bad[f.k] && !off;
+      if (f.kind === 'num' || f.kind === 'pct') el.classList.toggle('bad', isBad);
+      if ($('s_' + f.k)) $('s_' + f.k).classList.toggle('bad', isBad);
+      e.textContent = isBad ? (f.fx ? '100〜200の範囲で入力してください。初期値を使っています。' : '入力が正しくないため、初期値を使っています。') : '';
+      if (f.k === 'ceCustomsFeeYen' || f.k === 'adjustThresholdUSD') {
+        el.disabled = off;
+        if (f.opts) $('s_' + f.k).disabled = off;
+        $('w_' + f.k).classList.toggle('off', off);
+      }
+    });
+    GROUPS.forEach(function (g) {
+      var r = b.groups[g.id];
+      g.keys.forEach(function (k, i) {
+        var bad = !!r.invalid[i];
+        $('f_' + k).classList.toggle('bad', bad);
+        $('s_' + k).classList.toggle('bad', bad);
+        $('e_' + k).textContent = bad
+          ? (g.kind === 'rate' ? '使えない値のため、この欄は使いません（0以上、100未満の数字）。' : '使えない値のため、この欄は使いません（0以上の数字）。')
+          : '';
+      });
+      $('e_g_' + g.id).textContent = r.fellBack ? '使える値が1つもないため、初期値（' + g.def.map(function (v) { return boxOptLabel(g, v); }).join('、') + '）を使っています。' : '';
+    });
+    var amount = b.mode === 'amount';
+    $('modeRate').setAttribute('aria-pressed', amount ? 'false' : 'true');
+    $('modeAmount').setAttribute('aria-pressed', amount ? 'true' : 'false');
+    $('use_pr').classList.toggle('hidden', amount);
+    $('use_pa').classList.toggle('hidden', !amount);
+    renderTabs();
+    syncPickers();
+    renderCap(b);
+    render();
+    renderShip();
+  }
+
+  var timers = {};
+  function flash(el, cls, text, ms) {
+    el.className = 'inline ' + cls; el.textContent = text;
+    clearTimeout(timers[el.id]);
+    if (ms) timers[el.id] = setTimeout(function () { el.textContent = ''; }, ms);
+  }
+
+  function fetchFx() {
+    var msg = $('fxMsg'), btn = $('fxBtn');
+    msg.className = 'inline'; msg.textContent = '取得中です…';
+    btn.disabled = true;
+    var done = false, myToken = ++fxToken, timedOut = false, timer = null, ctrl = null;
+    function stale() { return myToken !== fxToken; }
+    function finish() { clearTimeout(timer); if (!stale()) btn.disabled = false; }
+    function fail(t) { finish(); if (done || stale()) return; done = true; msg.className = 'inline err'; msg.textContent = t; }
+    try {
+      if (typeof AbortController !== 'undefined') {
+        ctrl = new AbortController();
+        timer = setTimeout(function () { timedOut = true; ctrl.abort(); }, 10000);
+      }
+      fetch('https://open.er-api.com/v6/latest/USD', ctrl ? { signal: ctrl.signal } : undefined).then(function (res) {
+        if (!res.ok) throw new Error('http');
+        return res.json();
+      }).then(function (j) {
+        finish();
+        if (stale()) { done = true; return; }
+        var v = j && j.rates && j.rates.JPY;
+        if (typeof v !== 'number' || !(v >= 100 && v <= 200)) { fail('取得した値が想定の範囲外だったため、使いませんでした。'); return; }
+        done = true;
+        state.exchangeRate = String(v);
+        $('f_exchangeRate').value = state.exchangeRate;
+        save(); refresh();
+        flash(msg, 'ok', '最新の為替 ' + v + '円 を設定しました。', 5000);
+      }).catch(function () {
+        fail(timedOut ? '為替を取得できませんでした（時間切れ）。もう一度お試しください。' : '為替を取得できませんでした。通信状態を確認して、もう一度お試しください。');
+      });
+    } catch (e) { fail('為替を取得できませんでした。'); }
+  }
+
+  $('tabProfit').addEventListener('click', function () { state.tab = 'profit'; save(); refresh(); });
+  $('tabRev').addEventListener('click', function () { state.tab = 'rev'; save(); refresh(); });
+  $('revExcl').addEventListener('click', function () { state.revMode = 'excl'; save(); refresh(); });
+  $('revIncl').addEventListener('click', function () { state.revMode = 'incl'; save(); refresh(); });
+  $('revPrice').addEventListener('input', function (e) { state.revPrice = e.target.value; save(); render(); });
+  $('cost').addEventListener('input', function (e) { inputs.cost = e.target.value; save(); render(); });
+  $('ship').addEventListener('input', function (e) {
+    inputs.ship = e.target.value; shipFrom = null; $('shMsg').textContent = ''; renderShipCap(); save(); render();
+  });
+  // 右のパネルは同時に1つだけ開く
+  var DRAWERS = {
+    settings: { el: 'settings', btn: 'toggle', on: '設定を閉じる', off: '設定' },
+    ship: { el: 'shipcalc', btn: 'shipToggle', on: '送料計算を閉じる', off: '送料計算' }
+  };
+  var DRAWER_TITLES = { settings: 'settingsTitle', ship: 'shipTitle' };
+  function setDrawer(name) {
+    Object.keys(DRAWERS).forEach(function (k) {
+      var d = DRAWERS[k], open = k === name;
+      $(d.el).classList.toggle('open', open);
+      $(d.btn).setAttribute('aria-expanded', open ? 'true' : 'false');
+      $(d.btn).textContent = open ? d.on : d.off;
+    });
+    document.body.classList.toggle('settings-open', !!name);
+  }
+  function openDrawerName() {
+    var r = null;
+    Object.keys(DRAWERS).forEach(function (k) { if ($(DRAWERS[k].el).classList.contains('open')) r = k; });
+    return r;
+  }
+  // 閉じたら、開いたボタンに戻る
+  function closeDrawer() {
+    var n = openDrawerName();
+    if (!n) return;
+    setDrawer(null);
+    $(DRAWERS[n].btn).focus();
+  }
+  function toggleDrawer(name) {
+    if (openDrawerName() === name) { closeDrawer(); return; }
+    setDrawer(name);
+    $(DRAWER_TITLES[name]).focus();
+  }
+  $('toggle').addEventListener('click', function () { toggleDrawer('settings'); });
+  $('shipToggle').addEventListener('click', function () { toggleDrawer('ship'); });
+  $('closeSettings').addEventListener('click', closeDrawer);
+  $('closeShip').addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (e.isComposing || e.keyCode === 229) return;   // 日本語入力の変換中は閉じない
+    if (e.target && e.target.tagName === 'SELECT') return;   // 一覧を閉じるためのEscapeは、パネルを閉じない
+    closeDrawer();
+  });
+  $('reset').addEventListener('click', function () {
+    var res = resetScope(state, inputs, shipFrom, defaults());
+    state = res.state; inputs = res.inputs; shipFrom = res.applied;
+    customBox = {}; fxToken++;
+    $('fxBtn').disabled = false;
+    $('shMsg').textContent = ''; renderShipCap();
+    save(); syncFields(); refresh();
+    $('fxMsg').textContent = '';
+    flash($('resetMsg'), 'ok', res.message, 8000);
+  });
+
+  load();
+  buildFields();
+  buildCap();
+  buildShip();
+  syncFields();
+  $('cost').value = inputs.cost;
+  $('ship').value = inputs.ship;
+  $('revPrice').value = state.revPrice;
+  applyFuelOpen();
+  refresh();
+  renderShipCap();
+})();
+</script>
+</body>
+</html>

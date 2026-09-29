@@ -1,0 +1,796 @@
+{
+ "source": "Rate bands used by the owner's bulk listing sheet (tab Shipping_Rates), read 2026-09-30",
+ "methods": {
+  "EP": {
+   "name": "ePacket",
+   "weightBasis": "actual",
+   "volumetricDivisor": null,
+   "minWeightG": 1,
+   "maxWeightG": 2000,
+   "note": "rates hard-coded in getEpacketRate; >2000g falls back to CF; size sum limit 90cm only checked in auto-select"
+  },
+  "CE": {
+   "name": "Cpass-Economy",
+   "weightBasis": "larger",
+   "volumetricDivisor": 8,
+   "minWeightG": 1,
+   "maxWeightG": 25000,
+   "note": "divisor 8 only when R1 string is exactly \"Cpass-Economy\" (otherwise 5); sheet CE column empty above 25000g -> fallback to CF; CONFIG weightLimit=68000 not enforced"
+  },
+  "EMS": {
+   "name": "EMS",
+   "weightBasis": "actual",
+   "volumetricDivisor": null,
+   "minWeightG": 1,
+   "maxWeightG": 30000,
+   "note": "actual weight only; EMS empty above 30000 -> CF fallback"
+  },
+  "CF": {
+   "name": "Cpass-FedEx",
+   "weightBasis": "larger",
+   "volumetricDivisor": 5,
+   "minWeightG": 1,
+   "maxWeightG": 68000,
+   "note": "chargeable rounded up to 500g; + extra*(units-1), + fuel, - discount; limit 68000 in CONFIG not enforced by code"
+  },
+  "CD": {
+   "name": "Cpass-DHL",
+   "weightBasis": "larger",
+   "volumetricDivisor": 5,
+   "minWeightG": 1,
+   "maxWeightG": 68000,
+   "note": "same surcharge logic as CF with DHL params"
+  },
+  "EL": {
+   "name": "eLogistics",
+   "weightBasis": "larger",
+   "volumetricDivisor": 5,
+   "minWeightG": 1,
+   "maxWeightG": 68000,
+   "note": "rounded to 500g, table value as is, no surcharges"
+  }
+ },
+ "bands": [
+  {
+   "from": 1,
+   "to": 100,
+   "EP": 1200,
+   "CE": 1227,
+   "EMS": 3900,
+   "CF": 2115,
+   "CD": 2454,
+   "EL": 3700
+  },
+  {
+   "from": 101,
+   "to": 200,
+   "EP": 1410,
+   "CE": 1367,
+   "EMS": 3900,
+   "CF": 2115,
+   "CD": 2454,
+   "EL": 3700
+  },
+  {
+   "from": 201,
+   "to": 300,
+   "EP": 1620,
+   "CE": 1581,
+   "EMS": 3900,
+   "CF": 2115,
+   "CD": 2454,
+   "EL": 3700
+  },
+  {
+   "from": 301,
+   "to": 400,
+   "EP": 1830,
+   "CE": 1778,
+   "EMS": 3900,
+   "CF": 2115,
+   "CD": 2454,
+   "EL": 3700
+  },
+  {
+   "from": 401,
+   "to": 500,
+   "EP": 2040,
+   "CE": 2060,
+   "EMS": 3900,
+   "CF": 2115,
+   "CD": 2454,
+   "EL": 3700
+  },
+  {
+   "from": 501,
+   "to": 600,
+   "EP": 2250,
+   "CE": 2222,
+   "EMS": 4180,
+   "CF": 2599,
+   "CD": 2780,
+   "EL": 3700
+  },
+  {
+   "from": 601,
+   "to": 700,
+   "EP": 2460,
+   "CE": 2321,
+   "EMS": 4460,
+   "CF": 2599,
+   "CD": 2780,
+   "EL": 3700
+  },
+  {
+   "from": 701,
+   "to": 800,
+   "EP": 2670,
+   "CE": 2703,
+   "EMS": 4740,
+   "CF": 2599,
+   "CD": 2780,
+   "EL": 3700
+  },
+  {
+   "from": 801,
+   "to": 900,
+   "EP": 2880,
+   "CE": 2820,
+   "EMS": 5020,
+   "CF": 2599,
+   "CD": 2780,
+   "EL": 3700
+  },
+  {
+   "from": 901,
+   "to": 1000,
+   "EP": 3090,
+   "CE": 3020,
+   "EMS": 5300,
+   "CF": 2599,
+   "CD": 2780,
+   "EL": 3700
+  },
+  {
+   "from": 1001,
+   "to": 1100,
+   "EP": 3300,
+   "CE": 3136,
+   "EMS": 5990,
+   "CF": 2840,
+   "CD": 3106,
+   "EL": 3900
+  },
+  {
+   "from": 1101,
+   "to": 1200,
+   "EP": 3510,
+   "CE": 3250,
+   "EMS": 5990,
+   "CF": 2840,
+   "CD": 3106,
+   "EL": 3900
+  },
+  {
+   "from": 1201,
+   "to": 1250,
+   "EP": 3720,
+   "CE": 3366,
+   "EMS": 5990,
+   "CF": 2840,
+   "CD": 3106,
+   "EL": 3900
+  },
+  {
+   "from": 1251,
+   "to": 1300,
+   "EP": 3720,
+   "CE": 3366,
+   "EMS": 6600,
+   "CF": 2840,
+   "CD": 3106,
+   "EL": 3900
+  },
+  {
+   "from": 1301,
+   "to": 1400,
+   "EP": 3930,
+   "CE": 3704,
+   "EMS": 6600,
+   "CF": 2840,
+   "CD": 3106,
+   "EL": 3900
+  },
+  {
+   "from": 1401,
+   "to": 1500,
+   "EP": 4140,
+   "CE": 3816,
+   "EMS": 6600,
+   "CF": 2840,
+   "CD": 3106,
+   "EL": 3900
+  },
+  {
+   "from": 1501,
+   "to": 1600,
+   "EP": 4350,
+   "CE": 3935,
+   "EMS": 7290,
+   "CF": 3108,
+   "CD": 3432,
+   "EL": 4100
+  },
+  {
+   "from": 1601,
+   "to": 1700,
+   "EP": 4560,
+   "CE": 4046,
+   "EMS": 7290,
+   "CF": 3108,
+   "CD": 3432,
+   "EL": 4100
+  },
+  {
+   "from": 1701,
+   "to": 1750,
+   "EP": 4770,
+   "CE": 4165,
+   "EMS": 7290,
+   "CF": 3108,
+   "CD": 3432,
+   "EL": 4100
+  },
+  {
+   "from": 1751,
+   "to": 1800,
+   "EP": 4770,
+   "CE": 4165,
+   "EMS": 7900,
+   "CF": 3108,
+   "CD": 3432,
+   "EL": 4100
+  },
+  {
+   "from": 1801,
+   "to": 1900,
+   "EP": 4980,
+   "CE": 5056,
+   "EMS": 7900,
+   "CF": 3108,
+   "CD": 3432,
+   "EL": 4100
+  },
+  {
+   "from": 1901,
+   "to": 2000,
+   "EP": 5190,
+   "CE": 5245,
+   "EMS": 7900,
+   "CF": 3108,
+   "CD": 3432,
+   "EL": 4100
+  },
+  {
+   "from": 2001,
+   "to": 2500,
+   "EP": null,
+   "CE": 5582,
+   "EMS": 9100,
+   "CF": 3383,
+   "CD": 3758,
+   "EL": 4300
+  },
+  {
+   "from": 2501,
+   "to": 3000,
+   "EP": null,
+   "CE": 6333,
+   "EMS": 10300,
+   "CF": 3540,
+   "CD": 4084,
+   "EL": 5600
+  },
+  {
+   "from": 3001,
+   "to": 3500,
+   "EP": null,
+   "CE": 6958,
+   "EMS": 11500,
+   "CF": 3593,
+   "CD": 4410,
+   "EL": 5900
+  },
+  {
+   "from": 3501,
+   "to": 4000,
+   "EP": null,
+   "CE": 7704,
+   "EMS": 12700,
+   "CF": 4022,
+   "CD": 4736,
+   "EL": 6300
+  },
+  {
+   "from": 4001,
+   "to": 4500,
+   "EP": null,
+   "CE": 9135,
+   "EMS": 13900,
+   "CF": 4451,
+   "CD": 5062,
+   "EL": 6600
+  },
+  {
+   "from": 4501,
+   "to": 5000,
+   "EP": null,
+   "CE": 11733,
+   "EMS": 15100,
+   "CF": 4718,
+   "CD": 5388,
+   "EL": 7200
+  },
+  {
+   "from": 5001,
+   "to": 5500,
+   "EP": null,
+   "CE": 12500,
+   "EMS": 16300,
+   "CF": 5043,
+   "CD": 5714,
+   "EL": 7900
+  },
+  {
+   "from": 5501,
+   "to": 6000,
+   "EP": null,
+   "CE": 13335,
+   "EMS": 17500,
+   "CF": 5366,
+   "CD": 6040,
+   "EL": 8700
+  },
+  {
+   "from": 6001,
+   "to": 6500,
+   "EP": null,
+   "CE": 14160,
+   "EMS": 17500,
+   "CF": 5735,
+   "CD": 6366,
+   "EL": 10300
+  },
+  {
+   "from": 6501,
+   "to": 7000,
+   "EP": null,
+   "CE": 15209,
+   "EMS": 19900,
+   "CF": 6184,
+   "CD": 6692,
+   "EL": 12200
+  },
+  {
+   "from": 7001,
+   "to": 7500,
+   "EP": null,
+   "CE": 16058,
+   "EMS": 19900,
+   "CF": 6683,
+   "CD": 7018,
+   "EL": 14100
+  },
+  {
+   "from": 7501,
+   "to": 8000,
+   "EP": null,
+   "CE": 16893,
+   "EMS": 22300,
+   "CF": 6871,
+   "CD": 7344,
+   "EL": 16000
+  },
+  {
+   "from": 8001,
+   "to": 8500,
+   "EP": null,
+   "CE": 17562,
+   "EMS": 22300,
+   "CF": 7060,
+   "CD": 7670,
+   "EL": 17900
+  },
+  {
+   "from": 8501,
+   "to": 9000,
+   "EP": null,
+   "CE": 18152,
+   "EMS": 24700,
+   "CF": 7249,
+   "CD": 7996,
+   "EL": 19800
+  },
+  {
+   "from": 9001,
+   "to": 9500,
+   "EP": null,
+   "CE": 19106,
+   "EMS": 24700,
+   "CF": 8865,
+   "CD": 8322,
+   "EL": 21800
+  },
+  {
+   "from": 9501,
+   "to": 10000,
+   "EP": null,
+   "CE": 19639,
+   "EMS": 27100,
+   "CF": 9089,
+   "CD": 8648,
+   "EL": 23700
+  },
+  {
+   "from": 10001,
+   "to": 10500,
+   "EP": null,
+   "CE": 20276,
+   "EMS": 27100,
+   "CF": 9346,
+   "CD": 8974,
+   "EL": 25600
+  },
+  {
+   "from": 10501,
+   "to": 11000,
+   "EP": null,
+   "CE": 20864,
+   "EMS": 29500,
+   "CF": 9602,
+   "CD": 9300,
+   "EL": 25800
+  },
+  {
+   "from": 11001,
+   "to": 11500,
+   "EP": null,
+   "CE": 21565,
+   "EMS": 29500,
+   "CF": 9861,
+   "CD": 9626,
+   "EL": 26100
+  },
+  {
+   "from": 11501,
+   "to": 12000,
+   "EP": null,
+   "CE": 22199,
+   "EMS": 31900,
+   "CF": 10116,
+   "CD": 9952,
+   "EL": 26600
+  },
+  {
+   "from": 12001,
+   "to": 12500,
+   "EP": null,
+   "CE": 22887,
+   "EMS": 31900,
+   "CF": 11439,
+   "CD": 10278,
+   "EL": 27100
+  },
+  {
+   "from": 12501,
+   "to": 13000,
+   "EP": null,
+   "CE": 23466,
+   "EMS": 34300,
+   "CF": 11723,
+   "CD": 10604,
+   "EL": 27500
+  },
+  {
+   "from": 13001,
+   "to": 13500,
+   "EP": null,
+   "CE": 24054,
+   "EMS": 34300,
+   "CF": 12006,
+   "CD": 10930,
+   "EL": 28000
+  },
+  {
+   "from": 13501,
+   "to": 14000,
+   "EP": null,
+   "CE": 24869,
+   "EMS": 36700,
+   "CF": 12289,
+   "CD": 11256,
+   "EL": 28500
+  },
+  {
+   "from": 14001,
+   "to": 14500,
+   "EP": null,
+   "CE": 25200,
+   "EMS": 36700,
+   "CF": 12573,
+   "CD": 11582,
+   "EL": 28900
+  },
+  {
+   "from": 14501,
+   "to": 15000,
+   "EP": null,
+   "CE": 25988,
+   "EMS": 39100,
+   "CF": 12857,
+   "CD": 11908,
+   "EL": 29400
+  },
+  {
+   "from": 15001,
+   "to": 15500,
+   "EP": null,
+   "CE": 26656,
+   "EMS": 39100,
+   "CF": 13140,
+   "CD": 12234,
+   "EL": 29900
+  },
+  {
+   "from": 15501,
+   "to": 16000,
+   "EP": null,
+   "CE": 28149,
+   "EMS": 41500,
+   "CF": 14631,
+   "CD": 12560,
+   "EL": 30400
+  },
+  {
+   "from": 16001,
+   "to": 16500,
+   "EP": null,
+   "CE": 28775,
+   "EMS": 41500,
+   "CF": 14940,
+   "CD": 12886,
+   "EL": 30800
+  },
+  {
+   "from": 16501,
+   "to": 17000,
+   "EP": null,
+   "CE": 29495,
+   "EMS": 43900,
+   "CF": 15249,
+   "CD": 13212,
+   "EL": 31300
+  },
+  {
+   "from": 17001,
+   "to": 17500,
+   "EP": null,
+   "CE": 30196,
+   "EMS": 43900,
+   "CF": 15559,
+   "CD": 13538,
+   "EL": 31800
+  },
+  {
+   "from": 17501,
+   "to": 18000,
+   "EP": null,
+   "CE": 30902,
+   "EMS": 46300,
+   "CF": 15867,
+   "CD": 13864,
+   "EL": 32300
+  },
+  {
+   "from": 18001,
+   "to": 18500,
+   "EP": null,
+   "CE": 31478,
+   "EMS": 46300,
+   "CF": 16177,
+   "CD": 14190,
+   "EL": 32700
+  },
+  {
+   "from": 18501,
+   "to": 19000,
+   "EP": null,
+   "CE": 32204,
+   "EMS": 48700,
+   "CF": 16485,
+   "CD": 14516,
+   "EL": 33200
+  },
+  {
+   "from": 19001,
+   "to": 19500,
+   "EP": null,
+   "CE": 32936,
+   "EMS": 48700,
+   "CF": 16794,
+   "CD": 14842,
+   "EL": 33700
+  },
+  {
+   "from": 19501,
+   "to": 20000,
+   "EP": null,
+   "CE": 33947,
+   "EMS": 51100,
+   "CF": 17104,
+   "CD": 15168,
+   "EL": 34200
+  },
+  {
+   "from": 20001,
+   "to": 20500,
+   "EP": null,
+   "CE": 34655,
+   "EMS": 51100,
+   "CF": 20625,
+   "CD": 15820,
+   "EL": 34600
+  },
+  {
+   "from": 20501,
+   "to": 21000,
+   "EP": null,
+   "CE": 35426,
+   "EMS": 53500,
+   "CF": 20625,
+   "CD": 15820,
+   "EL": 35300
+  },
+  {
+   "from": 21001,
+   "to": 21500,
+   "EP": null,
+   "CE": 36145,
+   "EMS": 53500,
+   "CF": 21657,
+   "CD": 16472,
+   "EL": 35900
+  },
+  {
+   "from": 21501,
+   "to": 22000,
+   "EP": null,
+   "CE": 36859,
+   "EMS": 55900,
+   "CF": 21657,
+   "CD": 16472,
+   "EL": 36500
+  },
+  {
+   "from": 22001,
+   "to": 22500,
+   "EP": null,
+   "CE": 37602,
+   "EMS": 55900,
+   "CF": 22689,
+   "CD": 17124,
+   "EL": 37100
+  },
+  {
+   "from": 22501,
+   "to": 23000,
+   "EP": null,
+   "CE": 38516,
+   "EMS": 58300,
+   "CF": 22689,
+   "CD": 17124,
+   "EL": 37800
+  },
+  {
+   "from": 23001,
+   "to": 23500,
+   "EP": null,
+   "CE": 39084,
+   "EMS": 58300,
+   "CF": 23721,
+   "CD": 17776,
+   "EL": 38400
+  },
+  {
+   "from": 23501,
+   "to": 24000,
+   "EP": null,
+   "CE": 39678,
+   "EMS": 60700,
+   "CF": 23721,
+   "CD": 17776,
+   "EL": 39000
+  },
+  {
+   "from": 24001,
+   "to": 24500,
+   "EP": null,
+   "CE": 40374,
+   "EMS": 60700,
+   "CF": 24754,
+   "CD": 18428,
+   "EL": 39700
+  },
+  {
+   "from": 24501,
+   "to": 25000,
+   "EP": null,
+   "CE": 40955,
+   "EMS": 63100,
+   "CF": 24754,
+   "CD": 18428,
+   "EL": 40300
+  },
+  {
+   "from": 25001,
+   "to": 26000,
+   "EP": null,
+   "CE": null,
+   "EMS": 65500,
+   "CF": 25787,
+   "CD": 19080,
+   "EL": 40900
+  },
+  {
+   "from": 26001,
+   "to": 27000,
+   "EP": null,
+   "CE": null,
+   "EMS": 67900,
+   "CF": 26819,
+   "CD": 19732,
+   "EL": 42200
+  },
+  {
+   "from": 27001,
+   "to": 28000,
+   "EP": null,
+   "CE": null,
+   "EMS": 70300,
+   "CF": 27852,
+   "CD": 20384,
+   "EL": 43400
+  },
+  {
+   "from": 28001,
+   "to": 29000,
+   "EP": null,
+   "CE": null,
+   "EMS": 72700,
+   "CF": 28885,
+   "CD": 21036,
+   "EL": 44700
+  },
+  {
+   "from": 29001,
+   "to": 30000,
+   "EP": null,
+   "CE": null,
+   "EMS": 75100,
+   "CF": 29916,
+   "CD": 21688,
+   "EL": 45900
+  },
+  {
+   "from": 30001,
+   "to": null,
+   "EP": null,
+   "CE": null,
+   "EMS": null,
+   "CF": 31920,
+   "CD": 31343,
+   "EL": 47200
+  }
+ ],
+ "bandsNote": "to=null means open-ended (row 76, Weight_To empty). null = empty cell in the sheet. Volumetric weight floor is 200g in SHIPPING_COST_FOR_CALCULATOR."
+}
