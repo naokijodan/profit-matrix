@@ -52,7 +52,16 @@ body {
   line-height: 1.6;
 }
 .wrap { max-width: 900px; margin: 0 auto; padding: 20px 16px 48px; }
-h1 { font-size: 20px; margin: 0 0 16px; }
+h1 { font-size: 20px; margin: 0; }
+.headrow { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 8px 16px; margin: 0 0 16px; }
+.fxbox { margin-left: auto; text-align: right; min-width: 0; max-width: 100%; }
+.fxbox .fxline { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 4px 8px; }
+.fxbox .fxrate { font-weight: 600; font-variant-numeric: tabular-nums; }
+.fxbox button { padding: 4px 10px; font-size: 13px; }
+.fxbox .fxstat { margin: 2px 0 0; min-height: 1.2em; color: var(--muted); }
+.fxbox .fxstat.err { color: var(--err); }
+.fxbox .fxstat.ok { color: var(--ok); }
+
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; box-shadow: var(--shadow); }
 .inputs { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; }
 .inputs > div { min-width: 0; }
@@ -210,7 +219,13 @@ body.in-extension.settings-open { padding-right: 0; }
     <button type="button" id="tabProfit" aria-pressed="true">利益早見表</button>
     <button type="button" id="tabRev" aria-pressed="false">仕入れ価格早見表</button>
   </div>
-  <h1 id="h1">利益早見表</h1>
+  <div class="headrow">
+    <h1 id="h1">利益早見表</h1>
+    <div class="fxbox" id="fxBox">
+      <div class="fxline"><span class="fxrate" id="fxRate"></span><button type="button" id="fxBtnMain">最新の為替を取得</button></div>
+      <div class="inline fxstat" id="fxStatus" role="status"></div>
+    </div>
+  </div>
 
   <div class="card inputs">
     <div class="hidden" id="revSwitch" style="grid-column:1/-1">
@@ -649,6 +664,8 @@ function loadStored(o, base) {
     else if (k === 'profitMode') { if (v === 'rate' || v === 'amount') st[k] = v; }
     else if (k === 'tab') { if (v === 'profit' || v === 'rev') st[k] = v; }
     else if (k === 'revMode') { if (v === 'excl' || v === 'incl') st[k] = v; }
+    else if (k === 'fxSource') { if (v === 'default' || v === 'fetched' || v === 'manual') st[k] = v; }
+    else if (k === 'fxAt') { if (typeof v === 'string' && (v === '' || /^\d{1,15}$/.test(v))) st[k] = v; }
     else if (typeof v === 'string') st[k] = v;
   });
   var inp = own(o, 'inputs') ? o.inputs : null;
@@ -745,6 +762,27 @@ function extensionUrls(protocol) {
 }
 // EXT-END
 
+// FX-START
+// 為替の取得時刻と、状態の表示（純粋な関数）
+// ms: 取得した時刻（ミリ秒）。offsetMin: 時差（分）。省略すると、いまの端末の時間
+function formatFxTime(ms, offsetMin) {
+  var off = (offsetMin === undefined) ? -new Date(ms).getTimezoneOffset() : offsetMin;
+  var d = new Date(ms + off * 60000);
+  function p2(n) { return (n < 10 ? '0' : '') + n; }
+  return (d.getUTCMonth() + 1) + '/' + d.getUTCDate() + ' ' + p2(d.getUTCHours()) + ':' + p2(d.getUTCMinutes());
+}
+// source: 'default'（初期値）/ 'fetched'（取得）/ 'manual'（手入力）。at: 取得時刻（ミリ秒の文字列）
+function fxStatusText(source, at, offsetMin) {
+  if (source === 'manual') return '手入力の値';
+  if (source === 'fetched') {
+    var n = Number(at);
+    if (typeof at === 'string' && /^\d{1,15}$/.test(at) && n > 0) return formatFxTime(n, offsetMin) + ' に取得';
+    return '取得した値';
+  }
+  return '初期値';
+}
+// FX-END
+
 (function () {
   'use strict';
   var STORE_KEY = 'profit-matrix-settings-v1';
@@ -802,6 +840,7 @@ function extensionUrls(protocol) {
     o.profitMode = 'rate';
     o.capCategory = GENERAL;
     o.tab = 'profit'; o.revMode = 'excl'; o.revPrice = '100'; o.capOpen = true;
+    o.fxAt = ''; o.fxSource = 'default';
     SHDEFS.forEach(function (f) { o[f.k] = f.def; });
     return o;
   }
@@ -813,6 +852,7 @@ function extensionUrls(protocol) {
   var customBox = {};       // 空の枠で「自分で入力」を選んでいる間の印
   var fxToken = 0;          // 為替取得の受付番号（古い返事を捨てるため）
   var fuelOpen = false;
+  var fxTransient = null, fxTimer = null;      // 為替の一時的な表示（取得中・失敗など）
 
   function load() {
     try {
@@ -872,6 +912,7 @@ function extensionUrls(protocol) {
 
   function renderSummary(b) {
     var s = b.s;
+    $('fxRate').textContent = '為替 ' + s.exchangeRate.toFixed(2) + '円';
     var parts = ['為替 ' + s.exchangeRate.toFixed(2) + '円', '手数料 ' + pctText(s.feeRate) + '%',
       'ペイオニア ' + pctText(s.payoneerRate) + '%', '関税率 ' + pctText(s.tariffRate) + '%'];
     if (s.useCpassEconomy) parts.push('Cpass-Economy 通関手数料 ' + s.ceCustomsFeeYen + '円');
@@ -1076,6 +1117,7 @@ function extensionUrls(protocol) {
       var el = $('f_' + f.k);
       el.addEventListener((f.kind === 'bool' || f.kind === 'choice') ? 'change' : 'input', function () {
         state[f.k] = f.kind === 'bool' ? el.checked : el.value;
+        if (f.fx) state.fxSource = 'manual';
         if (f.k === 'useCpassEconomy') $('shMsg').textContent = '';
         save();
         refresh();
@@ -1304,6 +1346,7 @@ function extensionUrls(protocol) {
     renderCap(b);
     render();
     renderShip();
+    renderFxStatus();
   }
 
   var timers = {};
@@ -1313,14 +1356,29 @@ function extensionUrls(protocol) {
     if (ms) timers[el.id] = setTimeout(function () { el.textContent = ''; }, ms);
   }
 
+  // 為替の表示（設定の中と、画面の右上の両方に同じ文を出す）
+  function renderFxStatus() {
+    var t = fxTransient ? fxTransient.text : fxStatusText(state.fxSource, state.fxAt);
+    var cls = fxTransient ? fxTransient.cls : '';
+    [['fxMsg', 'inline'], ['fxStatus', 'inline fxstat']].forEach(function (x) {
+      var el = $(x[0]); if (!el) return;
+      el.className = x[1] + (cls ? ' ' + cls : ''); el.textContent = t;
+    });
+  }
+  function setFxTransient(text, cls, ms) {
+    clearTimeout(fxTimer);
+    fxTransient = { text: text, cls: cls };
+    renderFxStatus();
+    if (ms) fxTimer = setTimeout(function () { fxTransient = null; renderFxStatus(); }, ms);
+  }
+  function setFxButtons(disabled) { ['fxBtn', 'fxBtnMain'].forEach(function (id) { var b = $(id); if (b) b.disabled = disabled; }); }
   function fetchFx() {
-    var msg = $('fxMsg'), btn = $('fxBtn');
-    msg.className = 'inline'; msg.textContent = '取得中です…';
-    btn.disabled = true;
+    setFxTransient('取得中です…', '', 0);
+    setFxButtons(true);
     var done = false, myToken = ++fxToken, timedOut = false, timer = null, ctrl = null;
     function stale() { return myToken !== fxToken; }
-    function finish() { clearTimeout(timer); if (!stale()) btn.disabled = false; }
-    function fail(t) { finish(); if (done || stale()) return; done = true; msg.className = 'inline err'; msg.textContent = t; }
+    function finish() { clearTimeout(timer); if (!stale()) setFxButtons(false); }
+    function fail(t) { finish(); if (done || stale()) return; done = true; setFxTransient(t, 'err', 0); }
     try {
       if (typeof AbortController !== 'undefined') {
         ctrl = new AbortController();
@@ -1336,14 +1394,16 @@ function extensionUrls(protocol) {
         if (typeof v !== 'number' || !(v >= 100 && v <= 200)) { fail('取得した値が想定の範囲外だったため、使いませんでした。'); return; }
         done = true;
         state.exchangeRate = String(v);
+        state.fxSource = 'fetched'; state.fxAt = String(Date.now());
         $('f_exchangeRate').value = state.exchangeRate;
         save(); refresh();
-        flash(msg, 'ok', '最新の為替 ' + v + '円 を設定しました。', 5000);
+        setFxTransient('最新の為替 ' + v + '円 を設定しました。', 'ok', 5000);
       }).catch(function () {
         fail(timedOut ? '為替を取得できませんでした（時間切れ）。もう一度お試しください。' : '為替を取得できませんでした。通信状態を確認して、もう一度お試しください。');
       });
     } catch (e) { fail('為替を取得できませんでした。'); }
   }
+  $('fxBtnMain').addEventListener('click', fetchFx);
 
   $('tabProfit').addEventListener('click', function () { state.tab = 'profit'; save(); refresh(); });
   $('tabRev').addEventListener('click', function () { state.tab = 'rev'; save(); refresh(); });
@@ -1400,10 +1460,10 @@ function extensionUrls(protocol) {
     var res = resetScope(state, inputs, shipFrom, defaults());
     state = res.state; inputs = res.inputs; shipFrom = res.applied;
     customBox = {}; fxToken++;
-    $('fxBtn').disabled = false;
+    setFxButtons(false);
     $('shMsg').textContent = ''; renderShipCap();
     save(); syncFields(); refresh();
-    $('fxMsg').textContent = '';
+    clearTimeout(fxTimer); fxTransient = null; renderFxStatus();
     flash($('resetMsg'), 'ok', res.message, 8000);
   });
 

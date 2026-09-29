@@ -241,8 +241,8 @@ figcaption { font-size: 0.88rem; color: var(--muted); margin-top: 8px; line-heig
 <p>まず、画面の上にあるタブで「利益早見表」を選びます。はじめて開いたときは、こちらが選ばれています。前回選んだ表は、次に開いたときも覚えています。</p>
 
 <figure>
-  <img src="images/01-profit-table.png" alt="利益早見表の初期画面。仕入れ5000円、送料1500円を入れた状態で、広告費率0%から15%、利益率0%から15%の組み合わせが16行の表で並んでいる" width="1100" height="1500">
-  <figcaption>利益早見表の画面です。仕入れ 5000円、送料 1500円を入れた状態です。</figcaption>
+  <img src="images/01-profit-table.png" alt="利益早見表の初期画面。画面の右上に「為替 157.32円」と「最新の為替を取得」ボタン、その下に「初期値」の表示が出ている。仕入れ5000円、送料1500円を入れた状態で、広告費率0%から15%、利益率0%から15%の組み合わせが16行の表で並んでいる。いちばん下に「為替レートの提供: Rates By Exchange Rate API」の行がある" width="1100" height="1500">
+  <figcaption>利益早見表の画面です。仕入れ 5000円、送料 1500円を入れた状態です。右上に為替の表示、いちばん下に為替レートの提供元の行があります。</figcaption>
 </figure>
 
 <h3>手順</h3>
@@ -253,6 +253,21 @@ figcaption { font-size: 0.88rem; color: var(--muted); margin-top: 8px; line-heig
   <li>表を見ます。行は、広告費率と利益率の組み合わせです。自分の条件に近い行を探します。</li>
 </ol>
 <p>表の上の1行（為替・手数料・関税率などが並んだ行）には、いま計算に使っている条件が出ています。表の数字が思ったものと違うときは、まずここを見てください。</p>
+
+<h3>画面の右上の為替の表示</h3>
+<p>画面の右上（表の名前と同じ高さ）に、いま計算に使っている為替が「為替 157.32円」のように出ています。その横の「最新の為替を取得」ボタンを押すと、「設定」を開かなくても、最新の為替を取得して計算に使えます。取得するのは、このボタンを押したときだけです。自動では更新されません。</p>
+<p>ボタンの下の小さな文字は、いまの為替の状態です。</p>
+<div class="tablebox wide">
+  <table class="text">
+    <thead><tr><th>表示</th><th>意味</th></tr></thead>
+    <tbody>
+      <tr><td>初期値</td><td>ツールに入っている初期の為替を使っています。</td></tr>
+      <tr><td>9/30 08:38 に取得</td><td>ボタンで取得した為替です。日時は取得した時刻で、お使いの端末の時刻で出ます（日時は例です）。</td></tr>
+      <tr><td>手入力の値</td><td>「設定」の為替の欄に、自分で数字を入れた値です。</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>取得中は「取得中です…」と出て、うまくいかなかったときは、同じ場所にメッセージが出ます（第9章）。為替のデータは、画面のいちばん下に書いてある提供元から取得します（第8章）。</p>
 
 <h3>表の列の見方</h3>
 <div class="tablebox">
@@ -294,7 +309,7 @@ figcaption { font-size: 0.88rem; color: var(--muted); margin-top: 8px; line-heig
 <p>並べる値そのものは、「設定」で変えます（第7章で説明します）。</p>
 
 <figure>
-  <img src="images/02-profit-amount.png" alt="「利益額で計算」を選んだ画面。利益額の列が1,000円、2,000円、3,000円、5,000円になり、利益率の列には10.7%などの計算結果が出ている" width="1100" height="1500" loading="lazy">
+  <img src="images/02-profit-amount.png" alt="「利益額で計算」を選んだ画面。画面の右上に「為替 157.32円」と「最新の為替を取得」ボタン、その下に「初期値」の表示が出ている。利益額の列が1,000円、2,000円、3,000円、5,000円になり、利益率の列には10.7%などの計算結果が出ている" width="1100" height="1500" loading="lazy">
   <figcaption>「利益額で計算」を選んだ画面です。利益額が 1,000円・2,000円・3,000円・5,000円の行になり、利益率の列に率が出ています。</figcaption>
 </figure>
 
@@ -334,7 +349,7 @@ figcaption { font-size: 0.88rem; color: var(--muted); margin-top: 8px; line-heig
 </ul>
 
 <figure>
-  <img src="images/03-category-adjusted.png" alt="Video Games（$20）を選び、仕入れ20000円、送料1500円にした画面。想定関税の下に赤い「関税の請求は $20.00 まで」、出品価格の下に赤い「調整あり」が出ている。広告費率10%、利益率10%の行は、販売価格227.78、想定関税56.64、関税込み価格284.42、出品価格264.42" width="1100" height="1500" loading="lazy">
+  <img src="images/03-category-adjusted.png" alt="Video Games（$20）を選び、仕入れ20000円、送料1500円にした画面。画面の右上に「為替 157.32円」と「最新の為替を取得」ボタン、その下に「初期値」の表示が出ている。想定関税の下に赤い「関税の請求は $20.00 まで」、出品価格の下に赤い「調整あり」が出ている。広告費率10%、利益率10%の行は、販売価格227.78、想定関税56.64、関税込み価格284.42、出品価格264.42" width="1100" height="1500" loading="lazy">
   <figcaption>Video Games（$20）を選び、仕入れを 20000円にした例です。赤い表示の行が「調整あり」です。利益率0%の行の利益額が 1 や -1 になっているのは、丸めによるものです。</figcaption>
 </figure>
 
@@ -353,8 +368,8 @@ figcaption { font-size: 0.88rem; color: var(--muted); margin-top: 8px; line-heig
 <p>カテゴリの欄は、右上の「閉じる」ボタンで小さくできます。閉じると、ボタンが「開く」に変わります。閉じている間も、選んだカテゴリはそのまま計算に使われます。</p>
 
 <figure>
-  <img src="images/11-category-closed.png" alt="送料上限カテゴリの欄を閉じた画面。「送料上限カテゴリ: Video Games（$20）」の右に「開く」ボタンがあり、6つのカテゴリボタンは隠れている" width="1100" height="1500" loading="lazy">
-  <figcaption>カテゴリの欄を閉じた状態です（仕入れ 5000円の画面）。「開く」を押すと、6つのボタンがまた出ます。</figcaption>
+  <img src="images/11-category-closed.png" alt="送料上限カテゴリの欄を閉じた画面。画面の右上に「為替 157.32円」と「最新の為替を取得」ボタン、その下に「初期値」の表示が出ている。「送料上限カテゴリ: Video Games（$20）」の右に「開く」ボタンがあり、6つのカテゴリボタンは隠れている" width="1100" height="1500" loading="lazy">
+  <figcaption>カテゴリの欄を閉じた状態です（仕入れ 5000円、カテゴリは Video Games）。「開く」を押すと、6つのボタンがまた出ます。</figcaption>
 </figure>
 
 <h2 id="s5">5. 送料計算の使い方</h2>
@@ -362,7 +377,7 @@ figcaption { font-size: 0.88rem; color: var(--muted); margin-top: 8px; line-heig
 <p>パネルは、パネル内の「閉じる」ボタン、または「送料計算を閉じる」ボタンで閉じます。キーボードのEscキーでも閉じられます。「設定」のパネルも同じです。</p>
 
 <figure>
-  <img src="images/04-shipping-calc.png" alt="送料計算のパネルを開いた画面。パネルには重さ200g、長さ25cm、幅15cm、高さ10cmが入っている。「燃油・割引・超過料金」の見出しの下に「燃油などの設定を開く」ボタンがあり、その下の「送料の目安」に、容積重量としてCpass-Economy用469g、ほかの配送方法用750gが出ている。一覧の先頭にePacketが見える" width="1440" height="1000" loading="lazy">
+  <img src="images/04-shipping-calc.png" alt="送料計算のパネルを開いた画面。左側の主画面の右上には「為替 157.32円」と「最新の為替を取得」ボタンがある。パネルには重さ200g、長さ25cm、幅15cm、高さ10cmが入っている。「燃油・割引・超過料金」の見出しの下に「燃油などの設定を開く」ボタンがあり、その下の「送料の目安」に、容積重量としてCpass-Economy用469g、ほかの配送方法用750gが出ている。一覧の先頭にePacketが見える" width="1440" height="1000" loading="lazy">
   <figcaption>送料計算のパネルです。初期値は 重さ200g、長さ25cm、幅15cm、高さ10cm です。</figcaption>
 </figure>
 
@@ -392,7 +407,7 @@ figcaption { font-size: 0.88rem; color: var(--muted); margin-top: 8px; line-heig
 <p>使いたい配送方法の横の「この送料を使う」を押すと、その金額が「送料（円）」に入ります。入力欄の下には、どの方法・どの重さで決めたかが小さく出ます。</p>
 
 <figure>
-  <img src="images/05-shipping-applied.png" alt="Cpass-Economyの「この送料を使う」を押したあとの画面。送料欄が2060になり、その下に「送料計算から設定: Cpass-Economy（重さ200g、料金に使う重さ469g）」と出て、パネルに確認メッセージが緑色で出ている。一覧には、Cpass-FedEx、Cpass-DHL、eLogisticsの料金に使う重さが1,000gと出ている" width="1440" height="1000" loading="lazy">
+  <img src="images/05-shipping-applied.png" alt="Cpass-Economyの「この送料を使う」を押したあとの画面。左側の主画面の右上に為替の表示がある。送料欄が2060になり、その下に「送料計算から設定: Cpass-Economy（重さ200g、料金に使う重さ469g）」と出て、パネルに確認メッセージが緑色で出ている。一覧には、Cpass-FedEx、Cpass-DHL、eLogisticsの料金に使う重さが1,000gと出ている" width="1440" height="1000" loading="lazy">
   <figcaption>Cpass-Economy の「この送料を使う」を押したあとです。送料が 2060 になり、入力欄の下に説明が出ています。</figcaption>
 </figure>
 
@@ -439,11 +454,11 @@ figcaption { font-size: 0.88rem; color: var(--muted); margin-top: 8px; line-heig
 </ol>
 
 <figure>
-  <img src="images/06-purchase-table.png" alt="仕入れ価格早見表の画面。「関税を含まない販売価格」を選び、販売価格100ドル、送料1500円を入れた状態。仕入れ価格の列に、11,085、10,298、9,512などが並んでいる" width="1100" height="1500" loading="lazy">
+  <img src="images/06-purchase-table.png" alt="仕入れ価格早見表の画面。画面の右上に「為替 157.32円」と「最新の為替を取得」ボタン、その下に「初期値」の表示が出ている。「関税を含まない販売価格」を選び、販売価格100ドル、送料1500円を入れた状態。仕入れ価格の列に、11,085、10,298、9,512などが並んでいる" width="1100" height="1500" loading="lazy">
   <figcaption>「関税を含まない販売価格」に 100ドルを入れた例です。広告費率10%、利益率0%の行は 9,512円です。</figcaption>
 </figure>
 <figure>
-  <img src="images/07-purchase-table-incl.png" alt="「関税込み価格」を選び、関税込み価格120ドル、送料1500円を入れた画面。仕入れ価格の列に10,477、9,728などが並び、販売価格は95.17ドルなどに逆算されている" width="1100" height="1500" loading="lazy">
+  <img src="images/07-purchase-table-incl.png" alt="画面の右上に「為替 157.32円」と「最新の為替を取得」ボタン、その下に「初期値」の表示が出ている。「関税込み価格」を選び、関税込み価格120ドル、送料1500円を入れた画面。仕入れ価格の列に10,477、9,728などが並び、販売価格は95.17ドルなどに逆算されている" width="1100" height="1500" loading="lazy">
   <figcaption>「関税込み価格」に 120ドルを入れた例です。関税込み価格から、販売価格を逆算しています。</figcaption>
 </figure>
 
@@ -469,7 +484,7 @@ figcaption { font-size: 0.88rem; color: var(--muted); margin-top: 8px; line-heig
 <p>「利益率（%）」と「利益額（円）」のうち、いま表に使っている方には「いま使用中」の印が付きます。どちらで計算するかは、設定ではなく、画面の上のボタンで切り替えます。</p>
 
 <figure>
-  <img src="images/08-settings-top.png" alt="設定パネルの上の部分。広告費率と利益率の4つの枠に、それぞれ一覧と数字の欄があり、利益率の横に「いま使用中」の印が出ている" width="1440" height="1000" loading="lazy">
+  <img src="images/08-settings-top.png" alt="設定パネルの上の部分。左側の主画面の右上に為替の表示がある。広告費率と利益率の4つの枠に、それぞれ一覧と数字の欄があり、利益率の横に「いま使用中」の印が出ている" width="1440" height="1000" loading="lazy">
   <figcaption>設定パネルの上の部分です。広告費率・利益率・利益額の枠が並びます。</figcaption>
 </figure>
 
@@ -478,12 +493,13 @@ figcaption { font-size: 0.88rem; color: var(--muted); margin-top: 8px; line-heig
 <ul>
   <li>手数料率は、販売サイトに支払う手数料の割合です。</li>
   <li>ペイオニア手数料率は、海外から代金を受け取る際の受取サービスの手数料の割合です。</li>
-  <li>為替は、「最新の為替を取得」ボタンを押すと、最新の値を取得して入れます。取得できなかったときは、メッセージが出て、いまの値のままになります（第9章）。</li>
+  <li>為替は、「最新の為替を取得」ボタンを押すと、最新の値を取得して入れます。同じボタンは、主画面の右上にもあります。どちらを押しても同じ動きです。取得できなかったときは、メッセージが出て、いまの値のままになります（第9章）。</li>
+  <li>為替の欄の下には、状態（「初期値」「9/30 08:38 に取得」のような取得した時刻、「手入力の値」）が出ます。右上の表示と同じ内容です。</li>
 </ul>
 
 <figure>
-  <img src="images/09-settings-rates.png" alt="設定パネルの中ほど。為替の欄と「最新の為替を取得」ボタン、手数料率、ペイオニア手数料率、関税率、上乗せ係数、関税処理手数料率の欄が並んでいる" width="1440" height="1000" loading="lazy">
-  <figcaption>設定パネルの中ほどです。為替の欄の下に「最新の為替を取得」ボタンがあります。</figcaption>
+  <img src="images/09-settings-rates.png" alt="設定パネルの中ほど。為替の欄と「最新の為替を取得」ボタン、その下の「初期値」の表示、「為替レートの提供: Rates By Exchange Rate API」の行、手数料率、ペイオニア手数料率、関税率、上乗せ係数、関税処理手数料率の欄が並んでいる" width="1440" height="1000" loading="lazy">
+  <figcaption>設定パネルの中ほどです。為替の欄の下に「最新の為替を取得」ボタンと、状態の表示（この写真では「初期値」）、為替レートの提供元の行があります。</figcaption>
 </figure>
 
 <h3>関税の項目</h3>
@@ -513,7 +529,7 @@ figcaption { font-size: 0.88rem; color: var(--muted); margin-top: 8px; line-heig
   <table class="text">
     <thead><tr><th>区分</th><th>内容</th></tr></thead>
     <tbody>
-      <tr><td>初期値に戻るもの</td><td>「設定」の全項目（表に並べる条件、為替、手数料、関税の項目、「想定関税が上限以上のとき、出品価格を調整する」のチェック、「Cpass-Economy で送る」、「汎用のときの上限（ドル）」）／「利益の決め方」の切り替え／送料上限カテゴリ／「送料計算」のすべての欄</td></tr>
+      <tr><td>初期値に戻るもの</td><td>「設定」の全項目（表に並べる条件、為替、手数料、関税の項目、「想定関税が上限以上のとき、出品価格を調整する」のチェック、「Cpass-Economy で送る」、「汎用のときの上限（ドル）」）／「利益の決め方」の切り替え／送料上限カテゴリ／「送料計算」のすべての欄／為替の状態の表示（「初期値」に戻ります）</td></tr>
       <tr><td>そのまま残るもの</td><td>いま選んでいる表（利益早見表か仕入れ価格早見表か）／入力した仕入れ／入力した価格と「入力する価格の意味」／入力した送料／カテゴリの欄の開閉の状態</td></tr>
       <tr><td>消えるもの</td><td>送料計算から設定した送料の記録（送料欄の下の説明）と、パネルの確認メッセージ</td></tr>
     </tbody>
@@ -524,15 +540,16 @@ figcaption { font-size: 0.88rem; color: var(--muted); margin-top: 8px; line-heig
 </div>
 
 <figure>
-  <img src="images/10-settings-bottom.png" alt="設定パネルの下の部分。Cpass-Economyの通関手数料、送料の上限の説明、調整のチェック、汎用のときの上限、いちばん下に「初期値に戻す」ボタンが見える" width="1440" height="1000" loading="lazy">
+  <img src="images/10-settings-bottom.png" alt="設定パネルの下の部分。左側の主画面の右上に為替の表示がある。Cpass-Economyの通関手数料、送料の上限の説明、調整のチェック、汎用のときの上限、いちばん下に「初期値に戻す」ボタンが見える" width="1440" height="1000" loading="lazy">
   <figcaption>設定パネルの下の部分です。いちばん下に「初期値に戻す」ボタンがあります。</figcaption>
 </figure>
 
 <h2 id="s8">8. 知っておきたい点</h2>
 <ul>
+  <li><strong>最後に入力した仕入れ・送料・価格は、自動で保存されます。</strong>ページをもう一度開いたときに、そのまま戻ります。保存されるのは、使っているブラウザの中だけです。別のパソコンやブラウザには引き継がれません。ブラウザの保存データを消すと、設定と入力も消えることがあります。</li>
+  <li><strong>為替レートは、画面のいちばん下に書いてある提供元から取得します。</strong>下の行が、その表示です（設定の為替の欄の下にも同じ行があります）。<br>為替レートの提供: <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">Rates By Exchange Rate API</a></li>
   <li><strong>計算は目安です。</strong>実際の手数料・関税・送料は、販売サイトや配送会社の最新の案内を確認してください。</li>
-  <li><strong>設定と入力は、使っているブラウザの中だけに保存されます。</strong>別のパソコンやブラウザには引き継がれません。ブラウザの保存データを消すと、設定と入力も消えることがあります。</li>
-  <li><strong>為替は、ボタンを押したときだけ最新の値を取得します。</strong>自動では更新されません。</li>
+  <li><strong>為替は、ボタンを押したときだけ最新の値を取得します。</strong>自動では更新されません。ボタンは、主画面の右上と「設定」の中にあります。</li>
   <li><strong>仕入れ価格早見表の金額を利益早見表に入れ直すと、</strong>端数の関係で、販売価格が1〜2セント、利益が数円ずれることがあります。</li>
   <li><strong>関税込み価格を入力したとき、</strong>表の関税込み価格が入力と1セントずれることがあります。</li>
   <li><strong>重さの小数は切り上げて計算します。</strong>30kgを超える重さの送料は、料金表が固定額のため、実際の料金と違う可能性があります。</li>
@@ -540,7 +557,7 @@ figcaption { font-size: 0.88rem; color: var(--muted); margin-top: 8px; line-heig
 </ul>
 
 <h2 id="s9">9. 入力がうまくいかないとき</h2>
-<p>入力が使えない値のときは、ツールが次のメッセージを出します。メッセージごとの対処をまとめます。</p>
+<p>入力が使えない値のときは、ツールが次のメッセージを出します。メッセージごとの対処をまとめます。為替のメッセージは、主画面の右上の状態表示と、「設定」の為替の欄の下に出ます。</p>
 <div class="tablebox wide">
   <table class="text">
     <thead><tr><th>メッセージ</th><th>出る場面と対処</th></tr></thead>

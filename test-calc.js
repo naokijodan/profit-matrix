@@ -14,7 +14,9 @@ var mf = html.match(/\/\/ FORM-START([\s\S]*?)\/\/ FORM-END/);
 if (!mf) { console.log('FAIL: FORM block not found'); process.exit(1); }
 var mr = html.match(/\/\/ REV-START([\s\S]*?)\/\/ REV-END/);
 if (!mr) { console.log('FAIL: REV block not found'); process.exit(1); }
-var api = new Function(m[1] + mb[1] + mc[1] + ms[1] + mf[1] + mr[1] + '; return { calcRow: calcRow, calcRowAmount: calcRowAmount, parseNum: parseNum, evalGroup: evalGroup, effectiveThreshold: effectiveThreshold, adjustExampleText: adjustExampleText, CAP_CATEGORIES: CAP_CATEGORIES, chargedTariffUSD: chargedTariffUSD, formatYen: formatYen, formatUsd: formatUsd, MAX_INPUT: MAX_INPUT, shipCost: shipCost, shipBandLookup: shipBandLookup, shipVolWeight: shipVolWeight, shipEpacket: shipEpacket, SHIP_BANDS: SHIP_BANDS, SHIP_METHODS: SHIP_METHODS, SHIP_LIMITS: SHIP_LIMITS, validateShipInputs: validateShipInputs, validateFuelSection: validateFuelSection, shipAvailability: shipAvailability, loadStored: loadStored, pickMatch: pickMatch, SHDEFS: SHDEFS, SHIP_WEIGHT_MAX: SHIP_WEIGHT_MAX, calcRev: calcRev, formatPercent: formatPercent, legendVisible: legendVisible, resetScope: resetScope, tariffInputs: tariffInputs, tariffFor: tariffFor, validateRevInputs: validateRevInputs, revSummaryText: revSummaryText };')();
+var mfx = html.match(/\/\/ FX-START([\s\S]*?)\/\/ FX-END/);
+if (!mfx) { console.log('FAIL: FX block not found'); process.exit(1); }
+var api = new Function(m[1] + mb[1] + mc[1] + ms[1] + mf[1] + mr[1] + mfx[1] + '; return { calcRow: calcRow, calcRowAmount: calcRowAmount, parseNum: parseNum, evalGroup: evalGroup, effectiveThreshold: effectiveThreshold, adjustExampleText: adjustExampleText, CAP_CATEGORIES: CAP_CATEGORIES, chargedTariffUSD: chargedTariffUSD, formatYen: formatYen, formatUsd: formatUsd, MAX_INPUT: MAX_INPUT, shipCost: shipCost, shipBandLookup: shipBandLookup, shipVolWeight: shipVolWeight, shipEpacket: shipEpacket, SHIP_BANDS: SHIP_BANDS, SHIP_METHODS: SHIP_METHODS, SHIP_LIMITS: SHIP_LIMITS, validateShipInputs: validateShipInputs, validateFuelSection: validateFuelSection, shipAvailability: shipAvailability, loadStored: loadStored, pickMatch: pickMatch, SHDEFS: SHDEFS, SHIP_WEIGHT_MAX: SHIP_WEIGHT_MAX, calcRev: calcRev, formatPercent: formatPercent, legendVisible: legendVisible, resetScope: resetScope, tariffInputs: tariffInputs, tariffFor: tariffFor, formatFxTime: formatFxTime, fxStatusText: fxStatusText, validateRevInputs: validateRevInputs, revSummaryText: revSummaryText };')();
 var calcRow = api.calcRow, calcRowAmount = api.calcRowAmount, parseNum = api.parseNum, evalGroup = api.evalGroup;
 var effectiveThreshold = api.effectiveThreshold;
 
@@ -349,7 +351,7 @@ check('availability: fallback rows report their own limit', api.shipAvailability
 check('availability: normal rows are available', api.shipAvailability('EMS', api.shipCost('EMS', 500, 10, 10, 10, SP)) === null && api.SHIP_WEIGHT_MAX === 68000, '');
 
 // 20) F9: 保存データの読み込み
-var BASE = { tab: 'profit', revMode: 'excl', revPrice: '100', capOpen: true, exchangeRate: '157.315109', useCpassEconomy: false, adjustEnabled: true, capCategory: caps[0], profitMode: 'rate', pr1: '0', pr2: '5', pr3: '10', pr4: '15', pa1: '1000', pa4: '5000', shWeight: '200', shL: '25', shFuelF: '40' };
+var BASE = { fxAt: '', fxSource: 'default', tab: 'profit', revMode: 'excl', revPrice: '100', capOpen: true, exchangeRate: '157.315109', useCpassEconomy: false, adjustEnabled: true, capCategory: caps[0], profitMode: 'rate', pr1: '0', pr2: '5', pr3: '10', pr4: '15', pa1: '1000', pa4: '5000', shWeight: '200', shL: '25', shFuelF: '40' };
 function ld(o) { return api.loadStored(o, BASE); }
 var initOut = { state: BASE, inputs: { cost: '5000', ship: '1500' }, applied: null };
 check('load: old data without pr4 / pa4 / shipping keys keeps initial values', (function () {
@@ -499,7 +501,7 @@ check('tariffInputs: single source gives the same k and c as the written-out for
   var t = api.tariffInputs(S, 0.05), adj = 0.15 / (1 - 0.18 - 0.05) * 1.03;
   return t.adj === adj && t.k === adj * 1.021 + 0.08 * 0.021 && t.c === 0 + 0 + 1000 / 157.315109 && api.tariffInputs(S, 0.82) === null; })(), '');
 // H3: 初期値に戻すの範囲
-var BASE2 = { tab: 'profit', revMode: 'excl', revPrice: '100', capOpen: true, exchangeRate: '157.315109', profitMode: 'rate', capCategory: caps[0], useCpassEconomy: false, pr1: '0', shWeight: '200', shFuelF: '40', adjustEnabled: true };
+var BASE2 = { fxAt: '', fxSource: 'default', tab: 'profit', revMode: 'excl', revPrice: '100', capOpen: true, exchangeRate: '157.315109', profitMode: 'rate', capCategory: caps[0], useCpassEconomy: false, pr1: '0', shWeight: '200', shFuelF: '40', adjustEnabled: true };
 var curState = { tab: 'rev', revMode: 'incl', revPrice: '77.5', capOpen: false, exchangeRate: '150', profitMode: 'amount', capCategory: caps[1], useCpassEconomy: true, pr1: '9', shWeight: '999', shFuelF: '10', adjustEnabled: false };
 var MSG0 = '設定を初期値に戻しました。利益の決め方・送料上限カテゴリ・送料計算の条件も初期値に戻っています。入力した仕入れ・価格・送料はそのままです。';
 var rs1 = api.resetScope(curState, { cost: '8000', ship: '2060' }, { m: 'Cpass-Economy', weightEntered: 200, weightG: 469, yen: 2060 }, BASE2);
@@ -535,5 +537,30 @@ if (extensionUrls) {
 check('ext: markup has the hidden web link and the in-extension styles', /<a class="guidelink hidden" id="webLink" href="https:\/\/naokijodan\.github\.io\/profit-matrix\/" target="_blank" rel="noopener">ウェブ版<\/a>/.test(html) && /body\.in-extension\.settings-open \{ padding-right: 0; \}/.test(html) && /var IN_EXTENSION = location\.protocol === 'chrome-extension:'/.test(html), '');
 
 check('credit: attribution link text and URL appear exactly twice (footer and settings)', html.split('為替レートの提供: <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">Rates By Exchange Rate API</a>').length - 1 === 2, '');
+
+// 24) J1: 為替の取得時刻と状態の表示
+var T0 = Date.UTC(2026, 8, 29, 18, 20);   // 日本時間 2026-09-30 03:20
+check('formatFxTime: 9/30 03:20 in Japan time', api.formatFxTime(T0, 540) === '9/30 03:20', api.formatFxTime(T0, 540));
+check('formatFxTime: no zero padding for month/day, zero padding for hour/minute', api.formatFxTime(Date.UTC(2026, 0, 4, 22, 5), 540) === '1/5 07:05' && api.formatFxTime(Date.UTC(2026, 11, 31, 14, 59), 540) === '12/31 23:59' && api.formatFxTime(T0, 0) === '9/29 18:20', '');
+check('formatFxTime: default uses the local time zone', (function () { var d = new Date(T0); return api.formatFxTime(T0) === (d.getMonth() + 1) + '/' + d.getDate() + ' ' + (d.getHours() < 10 ? '0' : '') + d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes(); })(), api.formatFxTime(T0));
+check('fxStatusText: default / manual / fetched', api.fxStatusText('default', '') === '初期値' && api.fxStatusText('manual', String(T0)) === '手入力の値' && api.fxStatusText('fetched', String(T0), 540) === '9/30 03:20 に取得', api.fxStatusText('fetched', String(T0), 540));
+check('fxStatusText: fetched without a usable time, and unknown source', api.fxStatusText('fetched', '') === '取得した値' && api.fxStatusText('fetched', 'abc') === '取得した値' && api.fxStatusText('fetched', '0') === '取得した値' && api.fxStatusText('fetched', 5) === '取得した値' && api.fxStatusText('x', '') === '初期値' && api.fxStatusText(undefined) === '初期値', '');
+// J3: 為替の新しい保存項目
+check('load: old data without fxAt / fxSource gives initial values', (function () { var r = ld({ exchangeRate: '150' }); return r.state.fxAt === '' && r.state.fxSource === 'default' && r.state.exchangeRate === '150'; })(), '');
+check('load: fxAt / fxSource restored', (function () { var r = ld({ exchangeRate: '151.2', fxSource: 'fetched', fxAt: String(T0) }); return r.state.fxSource === 'fetched' && r.state.fxAt === String(T0) && api.fxStatusText(r.state.fxSource, r.state.fxAt, 540) === '9/30 03:20 に取得'; })(), '');
+check('load: manual source restored', ld({ fxSource: 'manual' }).state.fxSource === 'manual', '');
+check('load: bad fxAt / fxSource fall back', (function () { var r = ld({ fxSource: 'x', fxAt: 123 }), r2 = ld({ fxSource: 5, fxAt: '1e5' }), r3 = ld({ fxAt: '12abc' }), r4 = ld({ fxAt: '1234567890123456' }); return r.state.fxSource === 'default' && r.state.fxAt === '' && r2.state.fxSource === 'default' && r2.state.fxAt === '' && r3.state.fxAt === '' && r4.state.fxAt === ''; })(), '');
+check('reset scope: exchange-rate source and time go back to initial', (function () {
+  var r = api.resetScope(Object.assign({}, curState, { fxSource: 'fetched', fxAt: String(T0) }), { cost: '1', ship: '2' }, null, BASE2); return r.state.fxSource === 'default' && r.state.fxAt === '' && api.fxStatusText(r.state.fxSource, r.state.fxAt) === '初期値'; })(), '');
+// 入力値の保存と復元（仕入れ・送料・価格）
+check('load: typed cost, shipping and price are restored from stored data', (function () { var r = ld({ inputs: { cost: '8000', ship: '2,060' }, revPrice: '123.45' }); return r.inputs.cost === '8000' && r.inputs.ship === '2,060' && r.state.revPrice === '123.45'; })(), '');
+check('load: initial values are used when nothing is stored', [null, undefined, {}].every(function (g) { var r = ld(g); return r.inputs.cost === '5000' && r.inputs.ship === '1500' && r.state.revPrice === '100'; }), '');
+check('load: empty typed strings are kept as typed (not replaced by initial values)', (function () { var r = ld({ inputs: { cost: '', ship: '' }, revPrice: '' }); return r.inputs.cost === '' && r.inputs.ship === '' && r.state.revPrice === ''; })(), '');
+check('load: wrong-typed inputs fall back to initial values', (function () { var r = ld({ inputs: { cost: 8000, ship: null }, revPrice: 120 }); return r.inputs.cost === '5000' && r.inputs.ship === '1500' && r.state.revPrice === '100'; })(), '');
+// ページの部品
+check('page: exchange-rate block on the heading row, both buttons share one fetch function', /id="fxBtnMain"/.test(html) && /id="fxStatus"/.test(html) && /id="fxRate"/.test(html) && /class="headrow"/.test(html) && (html.match(/function fetchFx/g) || []).length === 1 && /\$\('fxBtnMain'\)\.addEventListener\('click', fetchFx\)/.test(html) && /\$\('fxBtn'\)\.addEventListener\('click', fetchFx\)/.test(html) && /\['fxBtn', 'fxBtnMain'\]/.test(html), '');
+check('page: hand-edited rate is marked manual', /if \(f\.fx\) state\.fxSource = 'manual'/.test(html), '');
+check('page: the cancelled recall-dropdown feature left no trace', !new RegExp('履' + '歴|his' + 't', 'i').test(html) && html.indexOf('labrow') < 0, '');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed (total ' + (pass + fail) + ')');
 process.exit(fail ? 1 : 0);
