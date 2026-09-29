@@ -94,6 +94,9 @@ td.profit.neg { color: var(--loss); }
 }
 .legend { color: var(--alert); font-weight: 600; }
 td.na { text-align: center; color: var(--err); font-size: 14px; }
+.credit { font-size: 12px; color: var(--muted); margin: 6px 2px 0; }
+.credit a { color: var(--muted); text-decoration: underline; }
+.footer-credit { margin-top: 24px; text-align: center; }
 .note { font-size: 13px; color: var(--muted); margin: 10px 2px 0; }
 #settings, #shipcalc {
   display: none; position: fixed; top: 0; right: 0; bottom: 0; width: 400px; max-width: 100%;
@@ -278,6 +281,8 @@ body.in-extension.settings-open { padding-right: 0; }
     <div class="inline ok" id="shMsg" role="status"></div>
     <p class="note">変更は自動で保存されます（このブラウザの中だけに保存）。料金は一括シートの送料表と同じ考え方で計算した目安です。</p>
   </div>
+
+  <p class="credit footer-credit">為替レートの提供: <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">Rates By Exchange Rate API</a></p>
 </div>
 
 <script>
@@ -1035,7 +1040,7 @@ function extensionUrls(protocol) {
         h += '<input type="text" id="f_' + f.k + '" autocomplete="off" inputmode="decimal">';
       }
     }
-    if (f.fx) h += '<div class="row" style="margin-top:6px"><button type="button" id="fxBtn">最新の為替を取得</button></div><div class="inline" id="fxMsg" role="status"></div>';
+    if (f.fx) h += '<div class="row" style="margin-top:6px"><button type="button" id="fxBtn">最新の為替を取得</button></div><div class="inline" id="fxMsg" role="status"></div><p class="credit">為替レートの提供: <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">Rates By Exchange Rate API</a></p>';
     h += '<div class="init">初期値: ' + fmtDef(f) + '</div><div class="inline err" id="e_' + f.k + '"></div></div>';
     return h;
   }

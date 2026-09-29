@@ -534,5 +534,6 @@ if (extensionUrls) {
 }
 check('ext: markup has the hidden web link and the in-extension styles', /<a class="guidelink hidden" id="webLink" href="https:\/\/naokijodan\.github\.io\/profit-matrix\/" target="_blank" rel="noopener">ウェブ版<\/a>/.test(html) && /body\.in-extension\.settings-open \{ padding-right: 0; \}/.test(html) && /var IN_EXTENSION = location\.protocol === 'chrome-extension:'/.test(html), '');
 
+check('credit: attribution link text and URL appear exactly twice (footer and settings)', html.split('為替レートの提供: <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">Rates By Exchange Rate API</a>').length - 1 === 2, '');
 console.log('\n' + pass + ' passed, ' + fail + ' failed (total ' + (pass + fail) + ')');
 process.exit(fail ? 1 : 0);
