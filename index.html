@@ -177,7 +177,9 @@ input:disabled { opacity: .5; cursor: not-allowed; background: var(--band); }
 .revtable { min-width: 620px; }
 td.hero { font-weight: 700; }
 .cpdisp { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; text-align: right; min-width: 0; }
-.cpexpr { font-size: 15px; color: var(--muted); min-height: 1.5em; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.cpnote { font-size: 13px; color: var(--muted); min-height: 1.4em; overflow-wrap: anywhere; }
+input.cpexpr { width: 100%; min-width: 0; font-size: 20px; padding: 6px 8px; text-align: right; border: 2px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font-variant-numeric: tabular-nums; }
+.cpres { min-height: 1.2em; }
 .cpres { font-size: 34px; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
 .cpkeys { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
 .cpkeys button { padding: 12px 0; font-size: 20px; min-width: 0; }
@@ -301,7 +303,8 @@ body.in-extension.settings-open { padding-right: 0; }
 
   <div id="calcMain" class="card hidden" aria-label="電卓">
     <div class="cpdisp">
-      <div class="cpexpr" id="cpExpr"></div>
+      <div class="cpnote" id="cpNote"></div>
+      <input class="cpexpr" id="cpExpr" type="text" inputmode="decimal" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="計算式">
       <div class="cpres" id="cpResult" aria-live="polite"></div>
     </div>
     <div class="cpkeys" id="cpKeys"></div>
@@ -311,7 +314,9 @@ body.in-extension.settings-open { padding-right: 0; }
       <button type="button" id="cpToPrice">価格に入れる</button>
       <button type="button" id="cpToUsd">円→ドル</button>
       <button type="button" id="cpToYen">ドル→円</button>
+      <button type="button" id="cpPaste">貼り付け</button>
       <button type="button" id="cpCopy">コピー</button>
+      <button type="button" id="cpCopyExpr">式をコピー</button>
     </div>
     <p class="note">円→ドル・ドル→円は、右上の為替を使います。「入れる」は、円は整数、ドルは小数2桁に四捨五入して入れます。</p>
     <h3 style="font-size:15px;margin:14px 0 0">計算の記録（新しい順・10件まで）</h3>
@@ -1004,6 +1009,62 @@ function cpFormatExpr(expr) {
   }
   return out.replace(/ {2,}/g, ' ');
 }
+// 入力欄の文字（貼り付けや手入力）を、計算用の形にそろえる。× ÷ − は内部の記号に、全角は半角に、桁区切りは消す。
+// 2つの数字の間の空白だけ1つ残す（2つの数字は式として成り立たないので、計算できない扱いになる）
+function cpCanon(text) {
+  var t = normalizeText(String(text)).replace(/\uff0b/g, '+').replace(/\uff0d/g, '-').replace(/\uff0a/g, '*').replace(/\uff0f/g, '/').replace(/\uff08/g, '(').replace(/\uff09/g, ')').replace(/\uff05/g, '%').replace(/[\u00d7*]/g, '\u00d7').replace(/[\u00f7\/]/g, '\u00f7').replace(/[-\u2212\u2010]/g, '\u2212').replace(/(\d),(?=\d)/g, '$1');
+  return t.replace(/\s+/g, function (m, off, str) {
+    var pv = str.charAt(off - 1), nx = str.charAt(off + m.length);
+    return (/[0-9.)%]/.test(pv) && /[0-9.(]/.test(nx)) ? ' ' : '';
+  });
+}
+// 貼り付けた文字をきれいにする（通貨の記号・言葉、桁区切り、空白、全角を整える）。使える文字は 数字 . + - * / ( ) % だけ。
+// 数字が1つもなければ ''。2つの数字が文字をはさんでいるときは、空白で区切って残す（計算できない扱い）
+function cpNormalizePaste(text) {
+  var t = normalizeText(String(text === undefined || text === null ? '' : text).slice(0, 2000));
+  t = t.replace(/US\s*[$\uff04]/gi, '').replace(/[$\uff04\u00a5\uffe5\u5186]/g, '')
+    .replace(/JPY|USD/gi, '').replace(/ドル|税込み|税込|税抜き|税抜|税別|送料込み|送料込/g, '')
+    .replace(/[\u00d7\u2715]/g, '*').replace(/\u00f7/g, '/').replace(/[\u2212\u2010\u2011\u2012\u2013\u2014\uff0d]/g, '-')
+    .replace(/\uff0b/g, '+').replace(/\uff0a/g, '*').replace(/\uff0f/g, '/').replace(/[\uff08\u3010\uff3b]/g, '(').replace(/[\uff09\u3011\uff3d]/g, ')').replace(/\uff05/g, '%');
+  var prev = '';
+  while (prev !== t) { prev = t; t = t.replace(/(\d),(?=\d{3}(?!\d))/g, '$1'); }
+  t = t.replace(/[^0-9.+\-*\/()%]+/g, function (m, off, str) {
+    var pv = str.slice(0, off).replace(/[^0-9.+\-*\/()%]/g, '').slice(-1);
+    var nx = str.slice(off + m.length).replace(/^[^0-9.+\-*\/()%]+/, '').charAt(0);
+    return (/[0-9.)%]/.test(pv) && /[0-9.(]/.test(nx)) ? ' ' : '';
+  });
+  while (/\(\s*\)/.test(t)) t = t.replace(/\(\s*\)/g, '');
+  t = t.trim();
+  return /[0-9]/.test(t) ? t : '';
+}
+// 入力欄の文字（区切りや空白つき）で、カーソルより前にある「式の文字」の数。区切りのカンマと、演算子のまわりの見た目の空白は数えない
+function cpIsLayout(v, i) {
+  var c = v.charAt(i);
+  if (c === ',') return true;
+  if (c !== ' ') return false;
+  return !(/[0-9.)%]/.test(v.charAt(i - 1)) && /[0-9.(]/.test(v.charAt(i + 1)));
+}
+function cpCaretToIndex(value, caret) {
+  var n = 0;
+  for (var i = 0; i < Math.min(caret, value.length); i++) if (!cpIsLayout(value, i)) n++;
+  return n;
+}
+// 式の文字 idx 個ぶん進んだ直後のカーソル位置
+function cpIndexToCaret(value, idx) {
+  if (idx <= 0) return 0;
+  var n = 0;
+  for (var i = 0; i < value.length; i++) {
+    if (!cpIsLayout(value, i)) { n++; if (n === idx) return i + 1; }
+  }
+  return value.length;
+}
+// 「式をコピー」用の文（例: 1,500 + 2,060 × 2 = 5,620）。結果が使えないときは null
+function cpExprCopyText(st) {
+  var v = cpView(st);
+  if (v.plain === null) return null;
+  var line = v.line;
+  return /=$/.test(line) ? line + ' ' + v.text : line + ' = ' + v.text;
+}
 // ---- キー操作（状態を受け取り、新しい状態を返す）。st: { expr, exprLine, fresh, err, lastRes, entry } ----
 function cpInit() { return { expr: '', exprLine: null, fresh: false, err: false, lastRes: null, entry: null }; }
 function cpPress(st0, key) {
@@ -1084,16 +1145,16 @@ function cpPress(st0, key) {
 // 画面に出す内容。{ line（式）, text（結果）, plain（区切りなしの結果か null）, value, usable }
 function cpView(st) {
   var line = st.exprLine !== null ? st.exprLine : cpFormatExpr(st.expr);
-  var bad = { line: line, text: '計算できません', plain: null, value: null, usable: false };
+  var bad = { line: line, note: st.exprLine, text: '計算できません', plain: null, value: null, usable: false };
   if (st.err) return bad;
   var ev = cpEval(st.expr);
   if (ev.ok) {
     var t = cpFormat(ev.value);
-    return { line: line, text: t, plain: cpPlain(ev.value), value: ev.value, usable: cpUsable(ev.value) };
+    return { line: line, note: st.exprLine, text: t, plain: cpPlain(ev.value), value: ev.value, usable: cpUsable(ev.value) };
   }
   if (ev.reason === 'divzero') return bad;
-  var txt = st.lastRes === null ? '0' : cpFormat(cpFromPlain(st.lastRes));
-  return { line: line, text: txt, plain: null, value: null, usable: false };
+  var txt = '';   // 途中の式・読めない式は、結果を空にする（エラーにはしない）
+  return { line: line, note: st.exprLine, text: txt, plain: null, value: null, usable: false };
 }
 // 為替換算を、状態に反映する。dir: 'toUsd' か 'toYen'。rateStr: 為替。できなければ元の状態を返す
 function cpConvertState(st, dir, rateStr) {
@@ -1794,6 +1855,25 @@ function cpTapeLine(x) { return x.e + ' = ' + cpFormat(cpFromPlain(x.r)); }
     $('cpToUsd').addEventListener('click', function () { cpConv('toUsd'); });
     $('cpToYen').addEventListener('click', function () { cpConv('toYen'); });
     $('cpCopy').addEventListener('click', cpCopy);
+    $('cpCopyExpr').addEventListener('click', cpCopyExpr);
+    $('cpPaste').addEventListener('click', cpPasteButton);
+    // ボタンを押しても、式の欄のフォーカス（カーソル位置）を外さない
+    ['cpKeys', 'cpPaste'].forEach(function (id) { $(id).addEventListener('mousedown', function (e) { e.preventDefault(); }); });
+    var inp = $('cpExpr');
+    inp.addEventListener('input', function () {
+      cpState = { expr: cpCanon(inp.value), exprLine: null, fresh: false, err: false, lastRes: cpState.lastRes, entry: null };
+      renderCalc(true);
+    });
+    inp.addEventListener('paste', function (e) {
+      var cd = e.clipboardData || window.clipboardData;
+      if (!cd) return;
+      e.preventDefault();
+      cpPasteText(cd.getData('text'));
+    });
+    inp.addEventListener('keydown', function (e) {
+      if (e.isComposing || e.keyCode === 229 || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === 'Enter' || e.key === '=') { e.preventDefault(); cpDo('='); }
+    });
   }
   function cpToast(text, cls) {
     var el = $('cpToast');
@@ -1802,15 +1882,53 @@ function cpTapeLine(x) { return x.e + ' = ' + cpFormat(cpFromPlain(x.r)); }
     cpTimer = setTimeout(function () { el.textContent = ''; }, 6000);
   }
   function cpRate() { return String(buildSettings().s.exchangeRate); }
-  function cpDo(key) {
-    var nx = cpPress(cpState, key);
+  function cpFinish(nx, caretIdx) {
     if (nx.entry) { tape = cpTapeAdd(tape, nx.entry); nx.entry = null; save(); }
     cpState = nx;
     renderCalc();
+    var inp = $('cpExpr');
+    if (caretIdx !== null && caretIdx !== undefined && document.activeElement === inp && inp.setSelectionRange) {
+      var c = cpIndexToCaret(inp.value, caretIdx);
+      inp.setSelectionRange(c, c);
+    }
   }
-  function renderCalc(b) {
-    var v = cpView(cpState);
-    $('cpExpr').textContent = v.line === '' ? '\u00a0' : v.line;
+  // 式の欄にフォーカスがあるときは、カーソルの位置に入れる（範囲選択は置き換える）。ないときは、最後に足す
+  function cpCaretRange() {
+    var inp = $('cpExpr');
+    if (document.activeElement !== inp || cpState.fresh) return null;
+    var a = cpCaretToIndex(inp.value, inp.selectionStart), b = cpCaretToIndex(inp.value, inp.selectionEnd);
+    return { a: Math.min(a, b), b: Math.max(a, b) };
+  }
+  function cpDo(key) {
+    var r = (key === '=' || key === 'C') ? null : cpCaretRange();
+    if (!r) { cpFinish(cpPress(cpState, key), null); return; }
+    var e = cpState.expr, prefix = e.slice(0, r.a), suffix = e.slice(r.b);
+    if (key === '\u232b' && r.a !== r.b) { cpFinish({ expr: prefix + suffix, exprLine: null, fresh: false, err: false, lastRes: cpState.lastRes, entry: null }, r.a); return; }
+    var nx = cpPress({ expr: prefix, exprLine: null, fresh: false, err: false, lastRes: cpState.lastRes, entry: null }, key);
+    var at = nx.expr.length;
+    nx.expr = nx.expr + suffix;
+    cpFinish(nx, at);
+  }
+  // 貼り付けた文字を、きれいにして入れる
+  function cpPasteText(text) {
+    var norm = cpNormalizePaste(text);
+    if (norm === '') { cpToast('貼り付ける数字が見つかりませんでした。', 'err'); return; }
+    var ins = cpCanon(norm), r = cpCaretRange(), e = cpState.fresh ? '' : cpState.expr;
+    var a = r ? r.a : e.length, b = r ? r.b : e.length;
+    cpFinish({ expr: e.slice(0, a) + ins + e.slice(b), exprLine: null, fresh: false, err: false, lastRes: cpState.lastRes, entry: null }, a + ins.length);
+  }
+  function cpPasteButton() {
+    var ng = function () { cpToast('貼り付けできませんでした。⌘V でも貼り付けできます。', 'err'); };
+    try {
+      if (navigator.clipboard && navigator.clipboard.readText) navigator.clipboard.readText().then(cpPasteText, ng);
+      else ng();
+    } catch (e) { ng(); }
+  }
+  function renderCalc(fromInput) {
+    var v = cpView(cpState), inp = $('cpExpr');
+    var shown = cpFormatExpr(cpState.expr);
+    if (fromInput !== true && !(document.activeElement === inp && cpCanon(inp.value) === cpState.expr)) inp.value = shown;
+    $('cpNote').textContent = v.note || '';
     $('cpResult').textContent = v.text;
     $('cpToCost').disabled = !v.usable;
     $('cpToShip').disabled = !v.usable;
@@ -1819,6 +1937,7 @@ function cpTapeLine(x) { return x.e + ' = ' + cpFormat(cpFromPlain(x.r)); }
     $('cpToUsd').disabled = !canConv || cpConvert(v.value, cpRate(), 'toUsd') === null;
     $('cpToYen').disabled = !canConv || cpConvert(v.value, cpRate(), 'toYen') === null;
     $('cpCopy').disabled = v.plain === null;
+    $('cpCopyExpr').disabled = v.plain === null;
     var h = '';
     tape.forEach(function (x, i) { h += '<li><button type="button" data-i="' + i + '">' + cpTapeLine(x).replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</button></li>'; });
     $('cpTape').innerHTML = h;
@@ -1843,15 +1962,16 @@ function cpTapeLine(x) { return x.e + ' = ' + cpFormat(cpFromPlain(x.r)); }
     if (nx === cpState) { cpToast('換算できません。', 'err'); return; }
     cpState = nx; renderCalc();
   }
-  function cpCopy() {
-    var v = cpView(cpState);
-    if (v.plain === null) return;
+  function cpCopyText(text) {
+    if (text === null) return;
     var ok = function () { cpToast('コピーしました', 'ok'); }, ng = function () { cpToast('コピーできませんでした', 'err'); };
     try {
-      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(v.plain).then(ok, ng);
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(ok, ng);
       else ng();
     } catch (e) { ng(); }
   }
+  function cpCopy() { cpCopyText(cpView(cpState).plain); }
+  function cpCopyExpr() { cpCopyText(cpExprCopyText(cpState)); }
   // キーボード: 電卓のタブを開いていて、文字入力欄・選択欄・パネルの中にいないとき
   var CP_KEYMAP = { '*': '\u00d7', '/': '\u00f7', '-': '\u2212', '+': '+', '(': '(', ')': ')', '%': '%', '.': '.', '=': '=', 'Enter': '=', 'Backspace': '\u232b' };
   document.addEventListener('keydown', function (e) {
