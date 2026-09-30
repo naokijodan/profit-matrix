@@ -16,7 +16,9 @@ var mr = html.match(/\/\/ REV-START([\s\S]*?)\/\/ REV-END/);
 if (!mr) { console.log('FAIL: REV block not found'); process.exit(1); }
 var mfx = html.match(/\/\/ FX-START([\s\S]*?)\/\/ FX-END/);
 if (!mfx) { console.log('FAIL: FX block not found'); process.exit(1); }
-var api = new Function(m[1] + mb[1] + mc[1] + ms[1] + mf[1] + mr[1] + mfx[1] + '; return { calcRow: calcRow, calcRowAmount: calcRowAmount, parseNum: parseNum, evalGroup: evalGroup, effectiveThreshold: effectiveThreshold, adjustExampleText: adjustExampleText, CAP_CATEGORIES: CAP_CATEGORIES, chargedTariffUSD: chargedTariffUSD, formatYen: formatYen, formatUsd: formatUsd, MAX_INPUT: MAX_INPUT, shipCost: shipCost, shipBandLookup: shipBandLookup, shipVolWeight: shipVolWeight, shipEpacket: shipEpacket, SHIP_BANDS: SHIP_BANDS, SHIP_METHODS: SHIP_METHODS, SHIP_LIMITS: SHIP_LIMITS, validateShipInputs: validateShipInputs, validateFuelSection: validateFuelSection, shipAvailability: shipAvailability, loadStored: loadStored, pickMatch: pickMatch, SHDEFS: SHDEFS, SHIP_WEIGHT_MAX: SHIP_WEIGHT_MAX, calcRev: calcRev, formatPercent: formatPercent, legendVisible: legendVisible, resetScope: resetScope, tariffInputs: tariffInputs, tariffFor: tariffFor, formatFxTime: formatFxTime, fxShouldBlink: fxShouldBlink, fxStatusText: fxStatusText, validateRevInputs: validateRevInputs, revSummaryText: revSummaryText };')();
+var mcp = html.match(/\/\/ CALCPAD-START([\s\S]*?)\/\/ CALCPAD-END/);
+if (!mcp) { console.log('FAIL: CALCPAD block not found'); process.exit(1); }
+var api = new Function(m[1] + mb[1] + mc[1] + ms[1] + mf[1] + mr[1] + mfx[1] + mcp[1] + '; return { calcRow: calcRow, calcRowAmount: calcRowAmount, parseNum: parseNum, evalGroup: evalGroup, effectiveThreshold: effectiveThreshold, adjustExampleText: adjustExampleText, CAP_CATEGORIES: CAP_CATEGORIES, chargedTariffUSD: chargedTariffUSD, formatYen: formatYen, formatUsd: formatUsd, MAX_INPUT: MAX_INPUT, shipCost: shipCost, shipBandLookup: shipBandLookup, shipVolWeight: shipVolWeight, shipEpacket: shipEpacket, SHIP_BANDS: SHIP_BANDS, SHIP_METHODS: SHIP_METHODS, SHIP_LIMITS: SHIP_LIMITS, validateShipInputs: validateShipInputs, validateFuelSection: validateFuelSection, shipAvailability: shipAvailability, loadStored: loadStored, pickMatch: pickMatch, SHDEFS: SHDEFS, SHIP_WEIGHT_MAX: SHIP_WEIGHT_MAX, calcRev: calcRev, formatPercent: formatPercent, legendVisible: legendVisible, resetScope: resetScope, tariffInputs: tariffInputs, tariffFor: tariffFor, cpEval: cpEval, cpFormat: cpFormat, cpPlain: cpPlain, cpParseNum: cpParseNum, cpRound: cpRound, cpUsable: cpUsable, cpConvert: cpConvert, cpFormatExpr: cpFormatExpr, cpInit: cpInit, cpPress: cpPress, cpView: cpView, cpConvertState: cpConvertState, cpTapeAdd: cpTapeAdd, cpTapeRepair: cpTapeRepair, cpTapeLine: cpTapeLine, formatFxTime: formatFxTime, fxShouldBlink: fxShouldBlink, fxStatusText: fxStatusText, validateRevInputs: validateRevInputs, revSummaryText: revSummaryText };')();
 var calcRow = api.calcRow, calcRowAmount = api.calcRowAmount, parseNum = api.parseNum, evalGroup = api.evalGroup;
 var effectiveThreshold = api.effectiveThreshold;
 
@@ -560,7 +562,7 @@ check('load: wrong-typed inputs fall back to initial values', (function () { var
 // ページの部品
 check('page: exchange-rate block on the heading row, both buttons share one fetch function', /id="fxBtnMain"/.test(html) && /id="fxStatus"/.test(html) && /id="fxRate"/.test(html) && /class="headrow"/.test(html) && (html.match(/function fetchFx/g) || []).length === 1 && /\$\('fxBtnMain'\)\.addEventListener\('click', fetchFx\)/.test(html) && /\$\('fxBtn'\)\.addEventListener\('click', fetchFx\)/.test(html) && /\['fxBtn', 'fxBtnMain'\]/.test(html), '');
 check('page: hand-edited rate is marked manual', /if \(f\.fx\) \{ state\.fxSource = 'manual';/.test(html), '');
-check('page: the cancelled recall-dropdown feature left no trace', !new RegExp('履' + '歴|his' + 't', 'i').test(html) && html.indexOf('labrow') < 0, '');
+check('page: the cancelled input-recall dropdown feature left no trace (the calculator record button is separate)', !new RegExp('his' + 'tAdd|his' + 'tRepair|his' + 'tCost|his' + 'tShip|his' + 'tPrice', 'i').test(html) && html.indexOf('labrow') < 0, '');
 
 
 // 25) K: 初期値の変更（上乗せ係数 1、VAT率 0、EU送料差額 0）
@@ -603,6 +605,99 @@ check('load: manual source with its time is restored and shown', (function () { 
 check('load: old manual data without a time shows no time and blinks', (function () { var r = ld({ fxSource: 'manual' }); return api.fxStatusText(r.state.fxSource, r.state.fxAt, JST) === '手入力の値' && bl(r.state.fxSource, r.state.fxAt, NOW, JST) === true; })(), '');
 check('page: blink is only on the top-right button, with hint and reduced-motion rule', /id="fxHint"/.test(html) && /toggle\('blink', blink\)/.test(html) && !/fxBtn'\)\.classList\.toggle\('blink'/.test(html) && /prefers-reduced-motion: no-preference\) \{\s*\.fxbox button\.blink \{ animation: fxpulse 1\.2s/.test(html) && /prefers-reduced-motion: reduce\) \{\s*\.fxbox button\.blink \{ animation: none/.test(html) && html.indexOf('今日の為替を取得してください') >= 0, '');
 check('page: manual entry records the time like a fetch', /if \(f\.fx\) \{ state\.fxSource = 'manual'; state\.fxAt = String\(Date\.now\(\)\); \}/.test(html), '');
+
+
+// 27) 電卓
+BigInt.prototype.toJSON = function () { return this.toString(); };
+var F = api.cpFormat, P0 = api.cpParseNum;
+function NEG(t) { return api.cpEval('0−' + t).value; }
+function ev(t) { var r = api.cpEval(t); return r.ok ? api.cpPlain(r.value) : (r.reason === 'empty' ? 'EMPTY' : 'ERR:' + r.reason); }
+[['1+2×3', '7'], ['(1+2)×3', '9'], ['10÷4', '2.5'], ['0.1+0.2', '0.3'], ['1.15×3', '3.45'], ['10÷3', '3.3333333333'], ['2−5', '-3'], ['2-5', '-3'],
+ ['1,500+2,060×2', '5620'], ['1,500 + 2,060 × 2', '5620'], ['999999×999999', '999998000001'], ['123456×7890', '974067840'],
+ ['5%', '0.05'], ['200+10%', '200.1'], ['50%×200', '100'], ['(2+3)%', '0.05'], ['−0', '0'], ['0×−5', '0'], ['2×−3', '-6'], ['−(2+3)', '-5'], ['1−−1', '2'], ['１２+３', '15'], ['.5+.5', '1'], ['5.+1', '6'],
+ ['100÷8÷2', '6.25'], ['2×3÷4', '1.5'], ['10−2−3', '5'], ['0.1×3', '0.3'], ['1÷3×3', '0.9999999999'], ['0.0000000001×0.1', '0'], ['0.00000000005', '0.0000000001'], ['99999999999×10', '999999999990']
+].forEach(function (c) {
+  if (c[1] === 'ERR') return;
+  var got = ev(c[0]);
+  check('calc: ' + c[0] + ' = ' + c[1], got === c[1], 'got ' + got);
+});
+// 15桁の掛け算（内部の整数で正確に。1兆以上は表示で「計算できません」になる）
+function rawScaled(t) { var r = api.cpEval(t); return r.ok ? r.value : null; }
+check('calc: 15-digit product is exact inside (value kept), but shown as 計算できません (1 trillion or more)', rawScaled('123456789012345×987654321') === BigInt('121932631124827861592745') * BigInt(10000000000) && F(rawScaled('123456789012345×987654321')) === '計算できません', '');
+check('calc: 15-digit times 15-digit product is exact', rawScaled('999999999999999×999999999999999') === BigInt('999999999999998000000000000001') * BigInt(10000000000), '');
+check('calc: 15-digit number alone is kept exactly and not usable', rawScaled('123456789012345') === BigInt('123456789012345') * BigInt(10000000000) && api.cpUsable(rawScaled('123456789012345')) === false && api.cpPlain(rawScaled('123456789012345')) === null, '');
+check('calc: negative results and ± on 0', ev('0−5') === '-5' && ev('−3×−3') === '9' && ev('−0') === '0' && api.cpFormat(api.cpEval('−0').value) === '0', '');
+check('calc: 1÷0 is not computable (divzero), also 0÷0 and 1÷(2−2)', ev('1÷0') === 'ERR:divzero' && ev('0÷0') === 'ERR:divzero' && ev('1÷(2−2)') === 'ERR:divzero', ev('1÷0'));
+check('calc: unbalanced parentheses / dangling operators / empty parentheses are not computable', ['(1+2', '1+2)', '1+', '×3', '()', '(', ')', '1++', '2 3', '1÷', '5%%%%x'].every(function (t) { return /^ERR/.test(ev(t)); }), ['(1+2', '1+2)', '1+', '×3', '()'].map(ev).join(','));
+check('calc: empty input has no result', ev('') === 'EMPTY' && ev('   ') === 'EMPTY', '');
+check('calc: 1e5 typed as text is invalid, other letters too', ev('1e5') === 'ERR:syntax' && ev('abc') === 'ERR:syntax' && ev('1x2') === 'ERR:syntax' && ev('1,5') === 'ERR:syntax' && ev('1,5000') === 'ERR:syntax' && ev('.') === 'ERR:syntax', [ev('1e5'), ev('1,5'), ev('1,5000')].join(','));
+check('calc: % is a postfix (5% = 0.05, 200 + 10% = 200.1, not 220)', ev('5%') === '0.05' && ev('200+10%') === '200.1', '');
+check('calc: precedence and left-to-right', ev('2+3×4−5÷5') === '13' && ev('8÷2×2') === '8' && ev('2×(3+4)×5') === '70', '');
+check('calc: deep parentheses are limited (no crash)', /^ERR/.test(ev(new Array(60).join('(') + '1' + new Array(60).join(')'))) && ev('((((1))))') === '1' && /^ERR/.test(ev(new Array(400).join('1+'))), '');
+// 整形
+check('format: separators', F(P0('1234567.5')) === '1,234,567.5' && F(P0('999')) === '999' && F(P0('1000')) === '1,000' && F(NEG('1234')) === '-1,234', F(P0('1234567.5')));
+check('format: trailing zeros removed and 10 decimals at most', F(P0('1.500')) === '1.5' && F(P0('2.0')) === '2' && F(P0('0.1234567891')) === '0.1234567891' && F(P0('0.12345678915')) === '0.1234567892' && F(P0('0.00000000004')) === '0', F(P0('0.12345678915')));
+check('format: not computable for non-finite and for values from 1,000,000,000,000', F(NaN) === '計算できません' && F(Infinity) === '計算できません' && F(-Infinity) === '計算できません' && F(null) === '計算できません' && F(undefined) === '計算できません'
+  && F(P0('1000000000000')) === '計算できません' && F(NEG('1000000000000')) === '計算できません' && F(P0('999999999999.9999999999')) === '999,999,999,999.9999999999' && api.cpPlain(P0('1000000000000')) === null, F(P0('999999999999.9999999999')));
+check('format: no exponent notation anywhere', !/e/i.test(F(P0('0.0000000001'))) && F(P0('0.0000000001')) === '0.0000000001' && F(P0('123456789012')) === '123,456,789,012', '');
+check('format: JS numbers are accepted', F(1234.5) === '1,234.5' && F(-0.25) === '-0.25' && F(0) === '0', '');
+check('format: usable results are non-negative and below 1 trillion', api.cpUsable(P0('5')) === true && api.cpUsable(P0('0')) === true && api.cpUsable(NEG('5')) === false && api.cpUsable(P0('1000000000000')) === false && api.cpUsable(null) === false, '');
+check('round: yen to whole, dollars to 2 decimals (half up, away from zero)', F(api.cpRound(P0('2.5'), 0)) === '3' && F(api.cpRound(P0('2.4999'), 0)) === '2' && F(api.cpRound(P0('35.725'), 2)) === '35.73' && F(api.cpRound(NEG('2.5'), 0)) === '-3' && F(api.cpRound(P0('12.3456'), 2)) === '12.35', '');
+// 為替の換算（期待値はここで別に計算）
+(function () {
+  var rate = '157.315109';
+  var usd = Math.round(5620 / 157.315109 * 100) / 100, yen = Math.round(100 * 157.315109);
+  var a = api.cpConvert(P0('5620'), rate, 'toUsd'), b = api.cpConvert(P0('100'), rate, 'toYen');
+  check('currency: 5,620 yen -> ' + usd + ' dollars (independent), 100 dollars -> ' + yen + ' yen', a !== null && F(a) === String(usd) && b !== null && F(b) === yen.toLocaleString('en-US') && usd === 35.72 && yen === 15732, F(a) + ' / ' + F(b));
+  check('currency: bad rate or bad value gives null', api.cpConvert(P0('5'), '0', 'toUsd') === null && api.cpConvert(P0('5'), 'abc', 'toYen') === null && api.cpConvert(null, rate, 'toUsd') === null && api.cpConvert(P0('999999999999'), rate, 'toYen') === null, '');
+  var st = api.cpPress(api.cpPress(api.cpPress(api.cpPress(api.cpInit(), '5'), '6'), '2'), '0');
+  var c = api.cpConvertState(st, 'toUsd', rate), vw = api.cpView(c);
+  check('currency: state after 円→ドル shows the converted value and the expression line', vw.text === '35.72' && vw.line === '5,620 円 → ドル（為替 157.32）' && c.fresh === true, vw.text + ' | ' + vw.line);
+  var c2 = api.cpConvertState(api.cpPress(api.cpPress(api.cpPress(api.cpInit(), '1'), '0'), '0'), 'toYen', rate), v2 = api.cpView(c2);
+  check('currency: ドル→円 state', v2.text === '15,732' && v2.line === '100 ドル → 円（為替 157.32）', v2.text + ' | ' + v2.line);
+})();
+// キー操作
+function padKeys(str) { var st = api.cpInit(), tp = []; str.split('').forEach(function (k) { st = api.cpPress(st, k); if (st.entry) { tp = api.cpTapeAdd(tp, st.entry); st.entry = null; } }); return { st: st, tape: tp, v: api.cpView(st) }; }
+check('keys: typing 1500 + 2060 × 2 shows the expression with separators and the live result', (function () { var k = padKeys('1500+2060×2'); return k.v.line === '1,500 + 2,060 × 2' && k.v.text === '5,620'; })(), JSON.stringify(padKeys('1500+2060×2').v));
+check('keys: = evaluates, records the line, and the result becomes the start of the next expression on an operator', (function () {
+  var k = padKeys('1500+2060×2='); var st2 = api.cpPress(k.st, '+'), st3 = api.cpPress(st2, '1');
+  return k.v.text === '5,620' && k.v.line === '1,500 + 2,060 × 2 =' && k.tape.length === 1 && k.tape[0].e === '1,500 + 2,060 × 2' && k.tape[0].r === '5620' && api.cpView(st3).line === '5,620 + 1' && api.cpView(st3).text === '5,621'; })(), JSON.stringify(padKeys('1500+2060×2=').v));
+check('keys: after = a digit replaces the result', (function () { var k = padKeys('12+3=7'); return k.v.line === '7' && k.v.text === '7' && k.st.fresh === false; })(), JSON.stringify(padKeys('12+3=7').v));
+check('keys: after = a second = does nothing new (no duplicate record)', padKeys('1+1==').tape.length === 1, '');
+check('keys: C clears everything, ⌫ deletes one character', padKeys('12+3C').v.line === '' && padKeys('12+3C').v.text === '0' && padKeys('12+34⌫').v.line === '12 + 3' && padKeys('12+34⌫⌫⌫').v.line === '12', JSON.stringify(padKeys('12+34⌫').v));
+check('keys: a second decimal point in one number is ignored, . at start gives 0.', padKeys('1.2.3').v.line === '1.23' && padKeys('.').v.line === '0.' && padKeys('1+.').v.line === '1 + 0.' && padKeys('5.5+.5=').v.text === '6', padKeys('1.2.3').v.line);
+check('keys: operators replace each other, leading − allowed, × then − is a sign', padKeys('5+×3').v.line === '5 × 3' && padKeys('×5').v.line === '5' && padKeys('−5').v.line === '−5' && padKeys('2×−3=').v.text === '-6', padKeys('5+×3').v.line);
+check('keys: parentheses and %', padKeys('(1+2)×3=').v.text === '9' && padKeys('1+2)').v.line === '1 + 2' && padKeys('5%').v.text === '0.05' && padKeys('%').v.line === '' && padKeys('5%=').v.text === '0.05', padKeys('(1+2)×3=').v.text);
+check('keys: ± toggles the sign of the last number', padKeys('5±').v.line === '−5' && padKeys('5±±').v.line === '5' && padKeys('3+5±').v.line === '3 + (−5)' && padKeys('3+5±±').v.line === '3 + 5' && padKeys('0±=').v.text === '0' && padKeys('±').v.line === '', JSON.stringify(padKeys('3+5±').v));
+check('keys: ± on the result of =', (function () { var k = padKeys('2+3=±'); return k.v.line === '−5' && k.v.text === '-5'; })(), '');
+check('keys: 1÷0 shows 計算できません and = keeps the expression', padKeys('1÷0').v.text === '計算できません' && padKeys('1÷0=').v.text === '計算できません' && padKeys('1÷0=').st.expr === '1÷0' && padKeys('1+=').v.text === '計算できません', '');
+check('keys: a dangling operator keeps showing the last good value', padKeys('12+').v.text === '12' && padKeys('12×(').v.text === '12', padKeys('12+').v.text);
+check('keys: results of 1 trillion or more are not computable and not usable', (function () { var k = padKeys('999999999999+1'); return k.v.text === '計算できません' && k.v.usable === false; })(), '');
+check('keys: negative result is shown but not usable; 0 and positive are usable', padKeys('2−5').v.text === '-3' && padKeys('2−5').v.usable === false && padKeys('2+3').v.usable === true && padKeys('0').v.usable === true && padKeys('').v.usable === false, '');
+check('keys: digits after ) or % are ignored (no implicit multiplication)', padKeys('(2)3').v.line === '(2)' && padKeys('5%3').v.line === '5%', '');
+check('keys: 0.1 + 0.2 typed by keys shows 0.3', padKeys('0.1+0.2=').v.text === '0.3', '');
+// 記録
+(function () {
+  var t = [];
+  for (var i = 1; i <= 12; i++) t = api.cpTapeAdd(t, { e: 'e' + i, r: String(i) });
+  check('tape: cap at 10, newest first', t.length === 10 && t[0].e === 'e12' && t[9].e === 'e3', t.map(function (x) { return x.e; }).join());
+  check('tape: append to empty and a formatted line', (function () { var x = api.cpTapeAdd([], { e: '1,500 + 2,060 × 2', r: '5620' }); return x.length === 1 && api.cpTapeLine(x[0]) === '1,500 + 2,060 × 2 = 5,620'; })(), '');
+  check('tape: negative and decimal lines', api.cpTapeLine({ e: '2 − 5', r: '-3' }) === '2 − 5 = -3' && api.cpTapeLine({ e: '10 ÷ 4', r: '2.5' }) === '10 ÷ 4 = 2.5', '');
+  check('tape: clear is an empty list (assignment) and bad entries are ignored on add', api.cpTapeAdd([], { e: 5, r: '1' }).length === 0 && api.cpTapeAdd([], null).length === 0 && api.cpTapeAdd([], { e: 'x', r: '1e5' }).length === 0, '');
+  check('tape: corrupted tapes are repaired', (function () {
+    var bad = [{ e: 'a', r: '1' }, null, 5, 'x', { e: 'b' }, { e: 'c', r: 7 }, { e: 'd', r: '1e5' }, { e: 'e', r: '12.5' }, [], { e: new Array(400).join('x'), r: '1' }, { e: 'f', r: '-3' }];
+    var r = api.cpTapeRepair(bad); return r.length === 3 && r[0].e === 'a' && r[1].e === 'e' && r[2].e === 'f'; })() && api.cpTapeRepair('abc').length === 0 && api.cpTapeRepair(null).length === 0 && api.cpTapeRepair({}).length === 0 && api.cpTapeRepair(new Array(30).fill({ e: 'a', r: '1' })).length === 10, '');
+  check('load: stored tape is restored, a corrupted tape is repaired, no tape gives an empty one', (function () {
+    var r1 = ld({ calcTape: [{ e: '1 + 1', r: '2' }, { e: 'bad', r: 'x' }] }), r2 = ld({ calcTape: 'oops' }), r3 = ld({}), r4 = ld(null), r5 = ld({ calcTape: new Array(20).fill({ e: 'a', r: '1' }) });
+    return r1.tape.length === 1 && r1.tape[0].r === '2' && r2.tape.length === 0 && r3.tape.length === 0 && r4.tape.length === 0 && r5.tape.length === 10; })(), '');
+  check('load: calculator tab is restored, other bad tabs fall back', ld({ tab: 'calc' }).state.tab === 'calc' && ld({ tab: 'nope' }).state.tab === 'profit', '');
+})();
+// ページの確認
+check('page: 電卓 is the third tab and has a container; no calculator button or drawer', /id="tabCalc"[^>]*>電卓</.test(html) && html.indexOf('id="tabRev"') < html.indexOf('id="tabCalc"') && /id="calcMain"/.test(html) && !/id="calcpad"/.test(html) && !/id="calcToggle"/.test(html), '');
+check('page: calculator elements exist', ['cpExpr', 'cpResult', 'cpKeys', 'cpTape', 'cpToCost', 'cpToShip', 'cpToPrice', 'cpToUsd', 'cpToYen', 'cpCopy', 'cpTapeClear', 'cpToast'].every(function (id) { return html.indexOf('id="' + id + '"') >= 0; }), '');
+check('page: no eval and no Function constructor in the page', !/\beval\s*\(/.test(html) && !/new Function\s*\(/.test(html) && !/[^A-Za-z_.]Function\s*\(/.test(html.replace(/<style[\s\S]*?<\/style>/, '')), '');
+check('page: only the three drawers mechanism unchanged (settings and ship)', /settings: \{ el: 'settings'/.test(html) && /ship: \{ el: 'shipcalc'/.test(html) && !/calc: \{ el:/.test(html), '');
+check('page: calculator keyboard ignores inputs, selects, drawers and IME composition; Escape clears', /tag === 'INPUT' \|\| tag === 'TEXTAREA' \|\| tag === 'SELECT'/.test(html) && /closest\('#settings, #shipcalc'\)/.test(html) && /cpDo\('C'\)/.test(html) && /e\.isComposing \|\| e\.keyCode === 229/.test(html), '');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed (total ' + (pass + fail) + ')');
 process.exit(fail ? 1 : 0);
