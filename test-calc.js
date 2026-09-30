@@ -16,7 +16,7 @@ var mr = html.match(/\/\/ REV-START([\s\S]*?)\/\/ REV-END/);
 if (!mr) { console.log('FAIL: REV block not found'); process.exit(1); }
 var mfx = html.match(/\/\/ FX-START([\s\S]*?)\/\/ FX-END/);
 if (!mfx) { console.log('FAIL: FX block not found'); process.exit(1); }
-var api = new Function(m[1] + mb[1] + mc[1] + ms[1] + mf[1] + mr[1] + mfx[1] + '; return { calcRow: calcRow, calcRowAmount: calcRowAmount, parseNum: parseNum, evalGroup: evalGroup, effectiveThreshold: effectiveThreshold, adjustExampleText: adjustExampleText, CAP_CATEGORIES: CAP_CATEGORIES, chargedTariffUSD: chargedTariffUSD, formatYen: formatYen, formatUsd: formatUsd, MAX_INPUT: MAX_INPUT, shipCost: shipCost, shipBandLookup: shipBandLookup, shipVolWeight: shipVolWeight, shipEpacket: shipEpacket, SHIP_BANDS: SHIP_BANDS, SHIP_METHODS: SHIP_METHODS, SHIP_LIMITS: SHIP_LIMITS, validateShipInputs: validateShipInputs, validateFuelSection: validateFuelSection, shipAvailability: shipAvailability, loadStored: loadStored, pickMatch: pickMatch, SHDEFS: SHDEFS, SHIP_WEIGHT_MAX: SHIP_WEIGHT_MAX, calcRev: calcRev, formatPercent: formatPercent, legendVisible: legendVisible, resetScope: resetScope, tariffInputs: tariffInputs, tariffFor: tariffFor, formatFxTime: formatFxTime, fxStatusText: fxStatusText, validateRevInputs: validateRevInputs, revSummaryText: revSummaryText };')();
+var api = new Function(m[1] + mb[1] + mc[1] + ms[1] + mf[1] + mr[1] + mfx[1] + '; return { calcRow: calcRow, calcRowAmount: calcRowAmount, parseNum: parseNum, evalGroup: evalGroup, effectiveThreshold: effectiveThreshold, adjustExampleText: adjustExampleText, CAP_CATEGORIES: CAP_CATEGORIES, chargedTariffUSD: chargedTariffUSD, formatYen: formatYen, formatUsd: formatUsd, MAX_INPUT: MAX_INPUT, shipCost: shipCost, shipBandLookup: shipBandLookup, shipVolWeight: shipVolWeight, shipEpacket: shipEpacket, SHIP_BANDS: SHIP_BANDS, SHIP_METHODS: SHIP_METHODS, SHIP_LIMITS: SHIP_LIMITS, validateShipInputs: validateShipInputs, validateFuelSection: validateFuelSection, shipAvailability: shipAvailability, loadStored: loadStored, pickMatch: pickMatch, SHDEFS: SHDEFS, SHIP_WEIGHT_MAX: SHIP_WEIGHT_MAX, calcRev: calcRev, formatPercent: formatPercent, legendVisible: legendVisible, resetScope: resetScope, tariffInputs: tariffInputs, tariffFor: tariffFor, formatFxTime: formatFxTime, fxShouldBlink: fxShouldBlink, fxStatusText: fxStatusText, validateRevInputs: validateRevInputs, revSummaryText: revSummaryText };')();
 var calcRow = api.calcRow, calcRowAmount = api.calcRowAmount, parseNum = api.parseNum, evalGroup = api.evalGroup;
 var effectiveThreshold = api.effectiveThreshold;
 
@@ -202,9 +202,9 @@ var S20 = withS({ adjustThresholdUSD: 20 });
 
 // ===== 追加テスト（今回） =====
 // 14) 部分B: 調整の見える化
-// 注意: 依頼の数値（関税33.84）は、初期設定（上乗せ係数1.03・EU送料差額1000円）では再現せず、上乗せ係数1・EU送料差額0円のときに再現する（初期設定だと関税41.20）
+// 注意: 依頼の数値（関税33.84）は、旧初期値（上乗せ係数1.03・VAT率8%・EU送料差額1000円）では再現せず、上乗せ係数1・EU送料差額0円（VAT率8%のまま）のときに再現する（旧初期値だと関税41.20）。この2つのテストは設定を明示して作っているので、初期値の変更の影響を受けない
 var PB = { feeRate: 0.20, adjustThresholdUSD: 20, safetyFactor: 1, euShippingDiffYen: 0 };
-check('part B (with initial settings the tariff is 41.20, not 33.84; recorded for the report)', calcRow(withS({ feeRate: 0.20, adjustThresholdUSD: 20 }), 20000, 1500, 0, 0).tariffUSD === 41.2, '');
+check('part B (with the OLD initial values 1.03 / VAT 8% / EU 1000 yen, given explicitly, the tariff is 41.20, not 33.84; recorded for the report)', calcRow(withS({ feeRate: 0.20, adjustThresholdUSD: 20 }), 20000, 1500, 0, 0).tariffUSD === 41.2, '');
 check('part B: values at cost 20000 / ship 1500 / fee 20% / cap 20 (safety factor 1, EU diff 0)',
   (function () {
     var rb2 = calcRow(withS(PB), 20000, 1500, 0, 0);
@@ -543,7 +543,7 @@ var T0 = Date.UTC(2026, 8, 29, 18, 20);   // 日本時間 2026-09-30 03:20
 check('formatFxTime: 9/30 03:20 in Japan time', api.formatFxTime(T0, 540) === '9/30 03:20', api.formatFxTime(T0, 540));
 check('formatFxTime: no zero padding for month/day, zero padding for hour/minute', api.formatFxTime(Date.UTC(2026, 0, 4, 22, 5), 540) === '1/5 07:05' && api.formatFxTime(Date.UTC(2026, 11, 31, 14, 59), 540) === '12/31 23:59' && api.formatFxTime(T0, 0) === '9/29 18:20', '');
 check('formatFxTime: default uses the local time zone', (function () { var d = new Date(T0); return api.formatFxTime(T0) === (d.getMonth() + 1) + '/' + d.getDate() + ' ' + (d.getHours() < 10 ? '0' : '') + d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes(); })(), api.formatFxTime(T0));
-check('fxStatusText: default / manual / fetched', api.fxStatusText('default', '') === '初期値' && api.fxStatusText('manual', String(T0)) === '手入力の値' && api.fxStatusText('fetched', String(T0), 540) === '9/30 03:20 に取得', api.fxStatusText('fetched', String(T0), 540));
+check('fxStatusText: default / manual / fetched', api.fxStatusText('default', '') === '初期値' && api.fxStatusText('manual', String(T0), 540) === '手入力の値（9/30 03:20）' && api.fxStatusText('manual', '') === '手入力の値' && api.fxStatusText('fetched', String(T0), 540) === '9/30 03:20 に取得', api.fxStatusText('fetched', String(T0), 540));
 check('fxStatusText: fetched without a usable time, and unknown source', api.fxStatusText('fetched', '') === '取得した値' && api.fxStatusText('fetched', 'abc') === '取得した値' && api.fxStatusText('fetched', '0') === '取得した値' && api.fxStatusText('fetched', 5) === '取得した値' && api.fxStatusText('x', '') === '初期値' && api.fxStatusText(undefined) === '初期値', '');
 // J3: 為替の新しい保存項目
 check('load: old data without fxAt / fxSource gives initial values', (function () { var r = ld({ exchangeRate: '150' }); return r.state.fxAt === '' && r.state.fxSource === 'default' && r.state.exchangeRate === '150'; })(), '');
@@ -559,8 +559,50 @@ check('load: empty typed strings are kept as typed (not replaced by initial valu
 check('load: wrong-typed inputs fall back to initial values', (function () { var r = ld({ inputs: { cost: 8000, ship: null }, revPrice: 120 }); return r.inputs.cost === '5000' && r.inputs.ship === '1500' && r.state.revPrice === '100'; })(), '');
 // ページの部品
 check('page: exchange-rate block on the heading row, both buttons share one fetch function', /id="fxBtnMain"/.test(html) && /id="fxStatus"/.test(html) && /id="fxRate"/.test(html) && /class="headrow"/.test(html) && (html.match(/function fetchFx/g) || []).length === 1 && /\$\('fxBtnMain'\)\.addEventListener\('click', fetchFx\)/.test(html) && /\$\('fxBtn'\)\.addEventListener\('click', fetchFx\)/.test(html) && /\['fxBtn', 'fxBtnMain'\]/.test(html), '');
-check('page: hand-edited rate is marked manual', /if \(f\.fx\) state\.fxSource = 'manual'/.test(html), '');
+check('page: hand-edited rate is marked manual', /if \(f\.fx\) \{ state\.fxSource = 'manual';/.test(html), '');
 check('page: the cancelled recall-dropdown feature left no trace', !new RegExp('履' + '歴|his' + 't', 'i').test(html) && html.indexOf('labrow') < 0, '');
+
+
+// 25) K: 初期値の変更（上乗せ係数 1、VAT率 0、EU送料差額 0）
+function pageDef(key) { var m2 = new RegExp("k: '" + key + "'[^\\n]*?def: '([^']*)'").exec(html); return m2 ? m2[1] : null; }
+check('page defaults: safety factor 1, VAT 0, EU shipping difference 0', pageDef('safetyFactor') === '1' && pageDef('vatRate') === '0' && pageDef('euShippingDiffYen') === '0', [pageDef('safetyFactor'), pageDef('vatRate'), pageDef('euShippingDiffYen')].join('/'));
+check('page defaults: the other tariff-related defaults are unchanged', pageDef('feeRate') === '18' && pageDef('payoneerRate') === '2' && pageDef('tariffRate') === '15' && pageDef('processingFeeRate') === '2.1' && pageDef('mpfUSD') === '0' && pageDef('ceCustomsFeeYen') === '296' && pageDef('exchangeRate') === '157.315109', '');
+check('page defaults: the option lists still contain the new default values', /k: 'safetyFactor'[^\n]*opts: \['1',/.test(html) && /k: 'vatRate'[^\n]*opts: \['0',/.test(html), '');
+// 新しい初期値で計算すると（期待値は、ここで手書きの式から別に出す）: 仕入れ5000・送料1500・広告0・利益0
+(function () {
+  var Sd = withS({ safetyFactor: Number(pageDef('safetyFactor')), vatRate: Number(pageDef('vatRate')) / 100, euShippingDiffYen: Number(pageDef('euShippingDiffYen')) });
+  var fx = 157.315109, sell = Math.round(6500 / (1 - 0.20) / fx * 100) / 100;
+  var tar = Math.round((sell * (0.15 / (1 - 0.18)) * 1 * 1.021 + sell * 0 * 0.021 + 0 / fx) * 100) / 100;
+  var r = calcRow(Sd, 5000, 1500, 0, 0);
+  check('calculation with the new default values (hand-written expectation ' + sell + ' / ' + tar + ')', r.ok && r.sellingPriceUSD === sell && r.tariffUSD === tar && r.priceWithTariffUSD === Math.round((sell + tar) * 100) / 100, JSON.stringify(r) + ' expected ' + sell + '/' + tar);
+})();
+// 初期値に戻す・保存データ: 新しい初期値を持つ base で
+var BASEK = Object.assign({}, BASE2, { safetyFactor: pageDef('safetyFactor'), vatRate: pageDef('vatRate'), euShippingDiffYen: pageDef('euShippingDiffYen') });
+var oldSaved = { safetyFactor: '1.03', vatRate: '8', euShippingDiffYen: '1000' };
+check('load: a user who saved the old values (1.03 / 8 / 1000) keeps them', (function () { var r = api.loadStored(oldSaved, BASEK); return r.state.safetyFactor === '1.03' && r.state.vatRate === '8' && r.state.euShippingDiffYen === '1000'; })(), '');
+check('load: nothing stored gives the new defaults (1 / 0 / 0)', (function () { var r = api.loadStored(null, BASEK), r2 = api.loadStored({ exchangeRate: '150' }, BASEK); return [r, r2].every(function (x) { return x.state.safetyFactor === '1' && x.state.vatRate === '0' && x.state.euShippingDiffYen === '0'; }); })(), '');
+check('reset scope: old saved values go back to the new defaults (1 / 0 / 0)', (function () { var r = api.resetScope(Object.assign({}, curState, oldSaved), { cost: '1', ship: '2' }, null, BASEK); return r.state.safetyFactor === '1' && r.state.vatRate === '0' && r.state.euShippingDiffYen === '0'; })(), '');
+
+
+// 26) K5: 為替ボタンの点滅
+var JST = 540, NOW = Date.UTC(2026, 8, 29, 23, 30);   // 日本時間 2026-09-30 08:30
+function jst(y, mo, d, h, mi) { return String(Date.UTC(y, mo - 1, d, h - 9, mi)); }
+var bl = api.fxShouldBlink;
+check('blink: never set (initial value) blinks', bl('default', '', NOW, JST) === true, '');
+check('blink: fetched today does not blink', bl('fetched', jst(2026, 9, 30, 3, 20), NOW, JST) === false, '');
+check('blink: fetched yesterday 23:59 blinks', bl('fetched', jst(2026, 9, 29, 23, 59), NOW, JST) === true, '');
+check('blink: manual today does not blink, manual yesterday blinks', bl('manual', jst(2026, 9, 30, 8, 0), NOW, JST) === false && bl('manual', jst(2026, 9, 29, 8, 0), NOW, JST) === true, '');
+check('blink: wrong-typed or missing time blinks', [5, null, undefined, '', 'abc', '0', '1e12', [], {}].every(function (a) { return bl('fetched', a, NOW, JST) === true && bl('manual', a, NOW, JST) === true; }), '');
+check('blink: unknown source blinks even with a time from today', bl('x', jst(2026, 9, 30, 3, 20), NOW, JST) === true && bl(undefined, jst(2026, 9, 30, 3, 20), NOW, JST) === true, '');
+check('blink: boundary at local midnight (23:59:59.999 vs 00:00:00.000)', (function () {
+  var lastMs = Date.UTC(2026, 8, 29, 14, 59, 59, 999), midnight = Date.UTC(2026, 8, 29, 15, 0, 0, 0);   // 日本時間 9/29 23:59:59.999 と 9/30 00:00:00
+  return bl('fetched', String(lastMs), lastMs, JST) === false && bl('fetched', String(lastMs), midnight, JST) === true && bl('fetched', String(midnight), midnight, JST) === false && bl('fetched', String(midnight), lastMs, JST) === true; })(), '');
+check('blink: same instant, different time zone gives a different day', bl('fetched', String(Date.UTC(2026, 8, 29, 14, 0)), Date.UTC(2026, 8, 29, 16, 0), JST) === true && bl('fetched', String(Date.UTC(2026, 8, 29, 14, 0)), Date.UTC(2026, 8, 29, 16, 0), 0) === false, '');
+check('blink: default time zone works (fetched just now does not blink)', bl('fetched', String(Date.now()), Date.now()) === false && bl('default', '', Date.now()) === true, '');
+check('load: manual source with its time is restored and shown', (function () { var r = ld({ fxSource: 'manual', fxAt: jst(2026, 9, 30, 8, 38) }); return r.state.fxSource === 'manual' && api.fxStatusText(r.state.fxSource, r.state.fxAt, JST) === '手入力の値（9/30 08:38）' && bl(r.state.fxSource, r.state.fxAt, NOW, JST) === false; })(), '');
+check('load: old manual data without a time shows no time and blinks', (function () { var r = ld({ fxSource: 'manual' }); return api.fxStatusText(r.state.fxSource, r.state.fxAt, JST) === '手入力の値' && bl(r.state.fxSource, r.state.fxAt, NOW, JST) === true; })(), '');
+check('page: blink is only on the top-right button, with hint and reduced-motion rule', /id="fxHint"/.test(html) && /toggle\('blink', blink\)/.test(html) && !/fxBtn'\)\.classList\.toggle\('blink'/.test(html) && /prefers-reduced-motion: no-preference\) \{\s*\.fxbox button\.blink \{ animation: fxpulse 1\.2s/.test(html) && /prefers-reduced-motion: reduce\) \{\s*\.fxbox button\.blink \{ animation: none/.test(html) && html.indexOf('今日の為替を取得してください') >= 0, '');
+check('page: manual entry records the time like a fetch', /if \(f\.fx\) \{ state\.fxSource = 'manual'; state\.fxAt = String\(Date\.now\(\)\); \}/.test(html), '');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed (total ' + (pass + fail) + ')');
 process.exit(fail ? 1 : 0);

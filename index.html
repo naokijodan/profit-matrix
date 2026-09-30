@@ -18,6 +18,7 @@
   --group-line: #8fa3b5;
   --err: #b42318;
   --alert: #b42318;
+  --blink-bg: #ffe9a8;
   --ok: #17703a;
   --profit-rgb: 30, 150, 90;
   --loss: #b42318;
@@ -36,6 +37,7 @@
     --group-line: #6b7f92;
     --err: #ff8a80;
     --alert: #ff8a80;
+    --blink-bg: #5a4a10;
     --ok: #6fd69a;
     --profit-rgb: 60, 190, 120;
     --loss: #ff8a80;
@@ -58,6 +60,15 @@ h1 { font-size: 20px; margin: 0; }
 .fxbox .fxline { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 4px 8px; }
 .fxbox .fxrate { font-weight: 600; font-variant-numeric: tabular-nums; }
 .fxbox button { padding: 4px 10px; font-size: 13px; }
+.fxbox .fxhint { font-size: 12px; font-weight: 600; color: var(--text); }
+.fxbox button.blink { border: 2px solid var(--accent); color: var(--text); }
+@keyframes fxpulse { 0%, 100% { background-color: var(--surface); border-color: var(--accent); } 50% { background-color: var(--blink-bg); border-color: var(--border); } }
+@media (prefers-reduced-motion: no-preference) {
+  .fxbox button.blink { animation: fxpulse 1.2s ease-in-out infinite; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fxbox button.blink { animation: none; background-color: var(--blink-bg); border: 3px solid var(--accent); }
+}
 .fxbox .fxstat { margin: 2px 0 0; min-height: 1.2em; color: var(--muted); }
 .fxbox .fxstat.err { color: var(--err); }
 .fxbox .fxstat.ok { color: var(--ok); }
@@ -222,7 +233,7 @@ body.in-extension.settings-open { padding-right: 0; }
   <div class="headrow">
     <h1 id="h1">利益早見表</h1>
     <div class="fxbox" id="fxBox">
-      <div class="fxline"><span class="fxrate" id="fxRate"></span><button type="button" id="fxBtnMain">最新の為替を取得</button></div>
+      <div class="fxline"><span class="fxrate" id="fxRate"></span><button type="button" id="fxBtnMain">最新の為替を取得</button><span class="fxhint hidden" id="fxHint">今日の為替を取得してください</span></div>
       <div class="inline fxstat" id="fxStatus" role="status"></div>
     </div>
   </div>
@@ -773,13 +784,21 @@ function formatFxTime(ms, offsetMin) {
 }
 // source: 'default'（初期値）/ 'fetched'（取得）/ 'manual'（手入力）。at: 取得時刻（ミリ秒の文字列）
 function fxStatusText(source, at, offsetMin) {
-  if (source === 'manual') return '手入力の値';
-  if (source === 'fetched') {
-    var n = Number(at);
-    if (typeof at === 'string' && /^\d{1,15}$/.test(at) && n > 0) return formatFxTime(n, offsetMin) + ' に取得';
-    return '取得した値';
-  }
+  var ok = typeof at === 'string' && /^\d{1,15}$/.test(at) && Number(at) > 0;
+  if (source === 'manual') return ok ? '手入力の値（' + formatFxTime(Number(at), offsetMin) + '）' : '手入力の値';
+  if (source === 'fetched') return ok ? formatFxTime(Number(at), offsetMin) + ' に取得' : '取得した値';
   return '初期値';
+}
+// 為替ボタンを点滅させるか。今日（端末の日付）に、取得または手入力で設定した為替でなければ true
+// now: いまの時刻（ミリ秒）。offsetMin: 時差（分）。省略すると端末の時間
+function fxShouldBlink(source, at, now, offsetMin) {
+  if (source !== 'fetched' && source !== 'manual') return true;
+  if (typeof at !== 'string' || !/^\d{1,15}$/.test(at) || !(Number(at) > 0)) return true;
+  function day(ms) {
+    var off = (offsetMin === undefined) ? -new Date(ms).getTimezoneOffset() : offsetMin;
+    return Math.floor((ms + off * 60000) / 86400000);
+  }
+  return day(Number(at)) !== day(now);
 }
 // FX-END
 
@@ -802,10 +821,10 @@ function fxStatusText(source, at, offsetMin) {
     { sec: 'fx', k: 'feeRate', t: '手数料率（%）', d: '販売サイトに支払う手数料の割合です。', def: '18', kind: 'pct', opts: ['13','14','15','16','17','18','19','20','21','22','23','24','25'] },
     { sec: 'fx', k: 'payoneerRate', t: 'ペイオニア手数料率（%）', d: '海外から代金を受け取る際の受取サービスの手数料の割合です。', def: '2', kind: 'pct', opts: ['0','0.5','1','1.5','2','2.5','3'] },
     { sec: 'tax', k: 'tariffRate', t: '関税率（%）', d: '輸入先の国で商品にかかる関税（輸入時の税金）の割合です。', def: '15', kind: 'pct', opts: ['0','5','10','15','20','25','30'] },
-    { sec: 'tax', k: 'safetyFactor', t: '上乗せ係数（関税の安全係数）', d: '関税を少し多めに見積もるための掛け率です（1.03 = 3%多め）。', def: '1.03', kind: 'num', unit: '', opts: ['1','1.03','1.05','1.1'] },
+    { sec: 'tax', k: 'safetyFactor', t: '上乗せ係数（関税の安全係数）', d: '関税を少し多めに見積もるための掛け率です（1.03 = 3%多め）。', def: '1', kind: 'num', unit: '', opts: ['1','1.03','1.05','1.1'] },
     { sec: 'tax', k: 'processingFeeRate', t: '関税処理手数料率（%）', d: '関税の支払いにかかる事務手数料の割合です。', def: '2.1', kind: 'pct', opts: ['0','1','2','2.1','3'] },
-    { sec: 'tax', k: 'vatRate', t: 'VAT率（%）', d: '欧州などでかかる付加価値税（消費税に近い税金）の割合です。', def: '8', kind: 'pct', opts: ['0','5','8','10','15','20','25'] },
-    { sec: 'tax', k: 'euShippingDiffYen', t: 'EU送料差額（円）', d: '一括シートの『EU送料差額』と同じ項目です。円をドルに直して、想定関税に加えます。', def: '1000', kind: 'num', unit: '円' },
+    { sec: 'tax', k: 'vatRate', t: 'VAT率（%）', d: '欧州などでかかる付加価値税（消費税に近い税金）の割合です。', def: '0', kind: 'pct', opts: ['0','5','8','10','15','20','25'] },
+    { sec: 'tax', k: 'euShippingDiffYen', t: 'EU送料差額（円）', d: '一括シートの『EU送料差額』と同じ項目です。円をドルに直して、想定関税に加えます。', def: '0', kind: 'num', unit: '円' },
     { sec: 'tax', k: 'mpfUSD', t: 'MPF（ドル）', d: '米国の通関でかかる手続き費用（ドル）です。一括シートでは『Cpassでは免除中』として 0 になっています。', def: '0', kind: 'num', unit: 'ドル' },
     { sec: 'tax', k: 'useCpassEconomy', t: 'Cpass-Economy で送る', d: 'Cpass-Economy（配送サービスの1つ）で送るときにチェックします。下の通関手数料が想定関税に加わります。', def: false, kind: 'bool' },
     { sec: 'tax', k: 'ceCustomsFeeYen', t: '通関手数料（円）', d: 'Cpass-Economy 利用時にかかる通関の手数料です。', def: '296', kind: 'num', unit: '円' },
@@ -1117,7 +1136,7 @@ function fxStatusText(source, at, offsetMin) {
       var el = $('f_' + f.k);
       el.addEventListener((f.kind === 'bool' || f.kind === 'choice') ? 'change' : 'input', function () {
         state[f.k] = f.kind === 'bool' ? el.checked : el.value;
-        if (f.fx) state.fxSource = 'manual';
+        if (f.fx) { state.fxSource = 'manual'; state.fxAt = String(Date.now()); }
         if (f.k === 'useCpassEconomy') $('shMsg').textContent = '';
         save();
         refresh();
@@ -1360,6 +1379,10 @@ function fxStatusText(source, at, offsetMin) {
   function renderFxStatus() {
     var t = fxTransient ? fxTransient.text : fxStatusText(state.fxSource, state.fxAt);
     var cls = fxTransient ? fxTransient.cls : '';
+    var blink = fxShouldBlink(state.fxSource, state.fxAt, Date.now());
+    var mb = $('fxBtnMain');
+    if (mb) mb.classList.toggle('blink', blink);
+    if ($('fxHint')) $('fxHint').classList.toggle('hidden', !blink);
     [['fxMsg', 'inline'], ['fxStatus', 'inline fxstat']].forEach(function (x) {
       var el = $(x[0]); if (!el) return;
       el.className = x[1] + (cls ? ' ' + cls : ''); el.textContent = t;
@@ -1404,6 +1427,7 @@ function fxStatusText(source, at, offsetMin) {
     } catch (e) { fail('為替を取得できませんでした。'); }
   }
   $('fxBtnMain').addEventListener('click', fetchFx);
+  setInterval(renderFxStatus, 60000);   // 日付が変わったら点滅を再開する
 
   $('tabProfit').addEventListener('click', function () { state.tab = 'profit'; save(); refresh(); });
   $('tabRev').addEventListener('click', function () { state.tab = 'rev'; save(); refresh(); });
